@@ -28,6 +28,7 @@
     eightySix: store.get("cp_86", []),       // [itemId]
     photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
     staffAuthed: false,
+    staffTab: "orders",
     editIndex: null                          // cart line being edited in the sheet
   };
 
@@ -749,13 +750,8 @@
 
     const live = state.kitchen.filter(o => o.status !== "collected");
     const statusLabel = { new: t("statusNew"), preparing: t("statusPreparing"), ready: t("statusReady") };
-    app.innerHTML = `
-      <div class="staff-bar">
-        <button class="back" id="staff-back">&#8592; ${t("backToApp")}</button>
-        <h1>${t("staffTitle")} · ${esc(RESTAURANT.shortName)}</h1>
-      </div>
-      <main style="padding-bottom:30px">
-        <div class="pad">
+
+    const ordersTab = `
           <h2 style="margin-top:4px">${t("liveOrders")}</h2>
           ${live.length ? live.map(o => {
             const mins = Math.max(0, Math.round((Date.now() - o.placedAt) / 60000));
@@ -781,19 +777,17 @@
             </div>`;
           }).join("") : `<div class="card"><p class="sub">${t("noLiveOrders")}</p></div>`}
 
-          <h2>${t("eightySix")}</h2>
+          <h2>${t("dineInSpend")}</h2>
           <div class="card">
-            ${MENU.map(m => {
-              const out = state.eightySix.includes(m.id);
-              return `
-              <div class="eight6-row">
-                <span class="nm">${esc(tx(m.name))}</span>
-                <button class="switch ${out ? "off" : "on"}" data-86="${m.id}">${out ? t("soldOut") : t("available")}</button>
-              </div>`;
-            }).join("")}
-          </div>
+            <label class="fld" for="di-phone">${t("memberPhone")}</label>
+            <input type="tel" id="di-phone" placeholder="082 555 0100" />
+            <label class="fld" for="di-amount">${t("amountSpent")}</label>
+            <input type="number" id="di-amount" min="1" placeholder="250" />
+            <button class="btn copper" id="di-add">${t("addPoints")}</button>
+          </div>`;
 
-          <h2>${t("photoManager")}</h2>
+    const menuTab = `
+          <h2 style="margin-top:4px">${t("photoManager")}</h2>
           <div class="card">
             <p class="sub" style="margin-bottom:6px">${t("photoManagerNote")}</p>
             ${MENU.map(m => `
@@ -811,17 +805,40 @@
             <input type="file" id="photo-file" accept="image/*" hidden />
           </div>
 
-          <h2>${t("dineInSpend")}</h2>
+          <h2>${t("eightySix")}</h2>
           <div class="card">
-            <label class="fld" for="di-phone">${t("memberPhone")}</label>
-            <input type="tel" id="di-phone" placeholder="082 555 0100" />
-            <label class="fld" for="di-amount">${t("amountSpent")}</label>
-            <input type="number" id="di-amount" min="1" placeholder="250" />
-            <button class="btn copper" id="di-add">${t("addPoints")}</button>
-          </div>
+            ${MENU.map(m => {
+              const out = state.eightySix.includes(m.id);
+              return `
+              <div class="eight6-row">
+                <span class="nm">${esc(tx(m.name))}</span>
+                <button class="switch ${out ? "off" : "on"}" data-86="${m.id}">${out ? t("soldOut") : t("available")}</button>
+              </div>`;
+            }).join("")}
+          </div>`;
+
+    app.innerHTML = `
+      <div class="staff-bar">
+        <button class="back" id="staff-back">&#8592; ${t("backToApp")}</button>
+        <h1>${t("staffTitle")} · ${esc(RESTAURANT.shortName)}</h1>
+      </div>
+      <main style="padding-bottom:30px">
+        <div class="cat-tabs" style="padding-top:14px">
+          <button class="cat-tab ${state.staffTab === "orders" ? "active" : ""}" data-stafftab="orders">&#128203; ${t("staffTabOrders")}</button>
+          <button class="cat-tab ${state.staffTab === "menu" ? "active" : ""}" data-stafftab="menu">&#128247; ${t("staffTabMenu")}</button>
+        </div>
+        <div class="pad">
+          ${state.staffTab === "menu" ? menuTab : ordersTab}
         </div>
       </main>
     `;
+    app.querySelectorAll("[data-stafftab]").forEach(b =>
+      b.addEventListener("click", () => {
+        state.staffTab = b.dataset.stafftab;
+        renderStaff();
+        window.scrollTo(0, 0);
+      })
+    );
     document.getElementById("staff-back").addEventListener("click", () => {
       state.staffAuthed = false;
       go("home");
@@ -835,7 +852,7 @@
         renderStaff();
       })
     );
-    // Photo manager: replace or reset a dish photo.
+    // Photo manager: replace or reset a dish photo. Only present on the menu tab.
     const fileInput = document.getElementById("photo-file");
     let pendingPhotoItem = null;
     app.querySelectorAll("[data-photo]").forEach(b =>
@@ -844,7 +861,7 @@
         fileInput.click();
       })
     );
-    fileInput.addEventListener("change", () => {
+    if (fileInput) fileInput.addEventListener("change", () => {
       const file = fileInput.files[0];
       if (!file || !pendingPhotoItem) return;
       const targetId = pendingPhotoItem;
@@ -890,7 +907,8 @@
         renderStaff();
       })
     );
-    document.getElementById("di-add").addEventListener("click", () => {
+    const diAdd = document.getElementById("di-add");
+    if (diAdd) diAdd.addEventListener("click", () => {
       const phone = document.getElementById("di-phone").value.trim();
       const amount = Number(document.getElementById("di-amount").value);
       if (!phone || !amount || amount <= 0) {

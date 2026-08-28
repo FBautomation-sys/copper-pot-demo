@@ -492,6 +492,8 @@ const STRINGS = {
   demoBadge: { en: "Demo app with sample data", af: "Demo app met voorbeelddata" },
 
   staffTitle: { en: "Kitchen board", af: "Kombuisbord" },
+  staffTabOrders: { en: "Orders", af: "Bestellings" },
+  staffTabMenu: { en: "Edit menu", af: "Wysig spyskaart" },
   enterPin: { en: "Staff PIN", af: "Personeel PIN" },
   demoPinHint: { en: "Demo PIN: 2021", af: "Demo PIN: 2021" },
   wrongPin: { en: "That PIN is not right. Try again.", af: "Daai PIN is nie reg nie. Probeer weer." },

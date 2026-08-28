@@ -1,6 +1,7 @@
-/* The Copper Pot Eatery, simple offline-first app shell cache. */
+/* The Copper Pot Eatery. Network first for code so updates show right away,
+   cache first for images which never change names. */
 
-const CACHE = "copper-pot-v2";
+const CACHE = "copper-pot-v3";
 const SHELL = [
   "./",
   "./index.html",
@@ -26,14 +27,33 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
+  const url = new URL(e.request.url);
+  const isImage = url.pathname.includes("/images/");
+
+  if (isImage) {
+    // Images: cache first, they are static files.
+    e.respondWith(
+      caches.match(e.request).then(hit =>
+        hit ||
+        fetch(e.request).then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+          return res;
+        })
+      )
+    );
+    return;
+  }
+
+  // Everything else: try the network first so new versions appear
+  // immediately, fall back to cache when offline.
   e.respondWith(
-    caches.match(e.request).then(hit =>
-      hit ||
-      fetch(e.request).then(res => {
+    fetch(e.request)
+      .then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
         return res;
-      }).catch(() => hit)
-    )
+      })
+      .catch(() => caches.match(e.request))
   );
 });
