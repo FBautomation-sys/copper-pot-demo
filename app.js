@@ -26,6 +26,7 @@
     pastOrders: store.get("cp_orders", []),  // [{id, when, lines, total}]
     kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines}]
     eightySix: store.get("cp_86", []),       // [itemId]
+    photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
     staffAuthed: false,
     editIndex: null                          // cart line being edited in the sheet
   };
@@ -50,6 +51,7 @@
   const rand = n => "R" + (Number.isInteger(n) ? n : n.toFixed(2));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const item = id => MENU.find(m => m.id === id);
+  const imgSrc = it => state.photos[it.id] || it.img;
   const pad2 = n => String(n).padStart(2, "0");
   const minToHHMM = m => pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
 
@@ -279,7 +281,7 @@
           const out = state.eightySix.includes(m.id);
           return `
           <button class="menu-item ${out ? "soldout" : ""}" data-item="${m.id}" ${out ? "disabled" : ""}>
-            <img src="${m.img}" alt="${esc(tx(m.name))}" loading="lazy" />
+            <img src="${imgSrc(m)}" alt="${esc(tx(m.name))}" loading="lazy" />
             <div class="info">
               <div class="name">${esc(tx(m.name))}</div>
               <div class="desc">${esc(tx(m.desc))}</div>
@@ -316,14 +318,14 @@
       const totalNow = (it.price + extrasSum) * qty;
       sheet.innerHTML = `
         <button class="close" id="sheet-close" aria-label="Close">&#10005;</button>
-        <img class="dish" src="${it.img}" alt="${esc(tx(it.name))}" />
+        <img class="dish" src="${imgSrc(it)}" alt="${esc(tx(it.name))}" />
         <div class="body">
           <div class="head">
             <h1>${esc(tx(it.name))}</h1>
             <span class="price">${rand(it.price)}</span>
           </div>
           <p class="sub">${esc(tx(it.desc))}</p>
-          ${it.photoAi ? `<span class="ai-tag">${t("aiPhotoTag")}</span>` : ""}
+          ${it.photoAi && !state.photos[it.id] ? `<span class="ai-tag">${t("aiPhotoTag")}</span>` : ""}
           ${it.extras.length ? `<h2>${t("extras")}</h2>
             <div>
               ${it.extras.map(k => `
@@ -417,7 +419,7 @@
             ].filter(Boolean).join(" · ");
             return `
             <div class="cart-line">
-              <img src="${it.img}" alt="" />
+              <img src="${imgSrc(it)}" alt="" />
               <div class="mid">
                 <div class="nm">${l.qty} x ${esc(tx(it.name))}</div>
                 ${meta ? `<div class="meta">${esc(meta)}</div>` : ""}
@@ -727,6 +729,7 @@
           <input type="tel" id="pin" maxlength="4" inputmode="numeric" autocomplete="off" />
           <div class="pin-error" id="pin-err" hidden>${t("wrongPin")}</div>
           <button class="btn green" id="pin-go">OK</button>
+          <p class="demo-pin">${t("demoPinHint")}</p>
         </div>
       `;
       document.getElementById("staff-back").addEventListener("click", () => go("more"));
@@ -790,6 +793,24 @@
             }).join("")}
           </div>
 
+          <h2>${t("photoManager")}</h2>
+          <div class="card">
+            <p class="sub" style="margin-bottom:6px">${t("photoManagerNote")}</p>
+            ${MENU.map(m => `
+              <div class="photo-row">
+                <img src="${imgSrc(m)}" alt="" />
+                <div class="mid">
+                  <div class="nm">${esc(tx(m.name))}</div>
+                  <span class="src-tag ${state.photos[m.id] ? "own" : ""}">${state.photos[m.id] ? t("yourPhotoLabel") : t("aiLabel")}</span>
+                </div>
+                <div class="pbtns">
+                  <button class="pbtn" data-photo="${m.id}">${t("replacePhoto")}</button>
+                  ${state.photos[m.id] ? `<button class="pbtn plain" data-photo-reset="${m.id}">${t("resetPhoto")}</button>` : ""}
+                </div>
+              </div>`).join("")}
+            <input type="file" id="photo-file" accept="image/*" hidden />
+          </div>
+
           <h2>${t("dineInSpend")}</h2>
           <div class="card">
             <label class="fld" for="di-phone">${t("memberPhone")}</label>
@@ -811,6 +832,52 @@
         const nextStatus = { new: "preparing", preparing: "ready", ready: "collected" };
         o.status = nextStatus[o.status];
         store.set("cp_kitchen", state.kitchen);
+        renderStaff();
+      })
+    );
+    // Photo manager: replace or reset a dish photo.
+    const fileInput = document.getElementById("photo-file");
+    let pendingPhotoItem = null;
+    app.querySelectorAll("[data-photo]").forEach(b =>
+      b.addEventListener("click", () => {
+        pendingPhotoItem = b.dataset.photo;
+        fileInput.click();
+      })
+    );
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (!file || !pendingPhotoItem) return;
+      const targetId = pendingPhotoItem;
+      pendingPhotoItem = null;
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        // Downscale so it fits comfortably in this demo's local storage.
+        const max = 900;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        try {
+          state.photos[targetId] = c.toDataURL("image/jpeg", 0.82);
+          store.set("cp_photos", state.photos);
+          toast(t("photoUpdated"));
+        } catch (e) {
+          toast(state.lang === "af" ? "Die foto is te groot vir die demo" : "That photo is too big for the demo");
+        }
+        renderStaff();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); };
+      img.src = url;
+      fileInput.value = "";
+    });
+    app.querySelectorAll("[data-photo-reset]").forEach(b =>
+      b.addEventListener("click", () => {
+        delete state.photos[b.dataset.photoReset];
+        store.set("cp_photos", state.photos);
+        toast(t("photoReset"));
         renderStaff();
       })
     );

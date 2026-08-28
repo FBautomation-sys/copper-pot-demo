@@ -493,6 +493,7 @@ const STRINGS = {
 
   staffTitle: { en: "Kitchen board", af: "Kombuisbord" },
   enterPin: { en: "Staff PIN", af: "Personeel PIN" },
+  demoPinHint: { en: "Demo PIN: 2021", af: "Demo PIN: 2021" },
   wrongPin: { en: "That PIN is not right. Try again.", af: "Daai PIN is nie reg nie. Probeer weer." },
   backToApp: { en: "Back to guest app", af: "Terug na gaste app" },
   liveOrders: { en: "Live orders", af: "Lewendige bestellings" },
@@ -513,6 +514,17 @@ const STRINGS = {
     af: "Geen lewendige bestellings op die oomblik nie. Die bord dateer op soos WhatsApp bestellings inkom."
   },
   available: { en: "Available", af: "Beskikbaar" },
+  photoManager: { en: "Menu photos", af: "Spyskaartfoto's" },
+  photoManagerNote: {
+    en: "This is where the restaurant loads its own dish photos. Tap Replace photo, pick a picture from your phone, and the menu updates right away. Reset brings back the original.",
+    af: "Hier laai die restaurant sy eie geregfoto's. Tik Vervang foto, kies 'n prent van jou foon, en die spyskaart dateer dadelik op. Herstel bring die oorspronklike terug."
+  },
+  replacePhoto: { en: "Replace photo", af: "Vervang foto" },
+  resetPhoto: { en: "Reset", af: "Herstel" },
+  photoUpdated: { en: "Photo updated, check the menu", af: "Foto opgedateer, kyk na die spyskaart" },
+  photoReset: { en: "Back to the original photo", af: "Terug na die oorspronklike foto" },
+  aiLabel: { en: "AI photo", af: "KI-foto" },
+  yourPhotoLabel: { en: "Your photo", af: "Jou foto" },
 
   installHint: {
     en: "Tip: add this app to your home screen for one tap ordering.",

@@ -1,6 +1,6 @@
 /* The Copper Pot Eatery, simple offline-first app shell cache. */
 
-const CACHE = "copper-pot-v1";
+const CACHE = "copper-pot-v2";
 const SHELL = [
   "./",
   "./index.html",
