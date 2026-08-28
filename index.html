@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>The Copper Pot Eatery</title>
+  <meta name="description" content="The Copper Pot Eatery, Stellenbosch. Honest food, warm company. Order for collection on WhatsApp, book a table, join the Copper Club." />
+  <meta name="theme-color" content="#faf4ec" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="images/logo.png" />
+  <link rel="apple-touch-icon" href="images/logo.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="The Copper Pot" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!--
+    Google Analytics
+    Paste the restaurant's own G- measurement ID below and remove the comment
+    markers. Do not ship a made up ID.
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+  -->
+</head>
+<body>
+  <div id="splash">
+    <img src="images/logo.png" alt="The Copper Pot Eatery logo" />
+    <div class="tagline" id="splash-tagline">Honest food, warm company.</div>
+  </div>
+
+  <div id="app"></div>
+
+  <div class="sheet-backdrop" id="sheet-backdrop"></div>
+  <div class="sheet" id="sheet"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
