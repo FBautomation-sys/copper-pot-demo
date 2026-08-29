@@ -520,6 +520,18 @@ const STRINGS = {
     en: "Nothing on the board right now. Pop in anyway, the kettle is on.",
     af: "Niks op die bord op die oomblik nie. Kom kuier in elk geval, die ketel is aan."
   },
+  noNotices: {
+    en: "No notices on the home screen right now.",
+    af: "Geen kennisgewings op die tuisskerm op die oomblik nie."
+  },
+  deleteConfirmItem: {
+    en: "Delete this from the app?",
+    af: "Vee dit van die app af?"
+  },
+  resetSectionConfirm: {
+    en: "This puts the original demo specials and notices back. Sure?",
+    af: "Dit sit die oorspronklike demo spesiale aanbiedinge en kennisgewings terug. Seker?"
+  },
   enterPin: { en: "Staff PIN", af: "Personeel PIN" },
   demoPinHint: { en: "Demo PIN: 2021", af: "Demo PIN: 2021" },
   wrongPin: { en: "That PIN is not right. Try again.", af: "Daai PIN is nie reg nie. Probeer weer." },

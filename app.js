@@ -258,10 +258,11 @@
           <p>${esc(tx(liveEvents()[0].desc))}</p>
         </div>
         <button class="btn ghost" data-go="events">${t("seeAllEvents")}</button>` : ""}
+        ${liveNotices().length ? `
         <h2>${t("goodToKnow")}</h2>
         <div class="notice-list">
           ${liveNotices().map(n => `<div class="card"><span class="ico">&#8505;&#65039;</span><span>${esc(tx(n.text))}</span></div>`).join("")}
-        </div>
+        </div>` : ""}
         <p class="sub" style="margin-top:14px">${t("installHint")}</p>
       </div>
     `;
@@ -827,7 +828,7 @@
     const specialsTab = `
           <h2 style="margin-top:4px">${t("specialsEditorTitle")}</h2>
           <p class="sub" style="margin-bottom:10px">${t("specialsEditorNote")}</p>
-          ${evs.map((e, i) => `
+          ${evs.length ? evs.map((e, i) => `
           <div class="card" data-ev="${i}" style="margin-bottom:10px">
             <label class="fld">${t("fieldTitle")} ENG</label>
             <input type="text" data-f="title-en" value="${esc(e.title.en)}" />
@@ -845,12 +846,12 @@
               <button class="btn green" style="margin-top:12px" data-ev-save="${i}">${t("save")}</button>
               <button class="btn danger" style="margin-top:12px" data-ev-del="${i}">${t("deleteWord")}</button>
             </div>
-          </div>`).join("")}
+          </div>`).join("") : `<div class="card"><p class="sub">${t("noEvents")}</p></div>`}
           <button class="btn ghost" id="ev-add">${t("addSpecial")}</button>
 
           <h2>${t("noticesEditorTitle")}</h2>
           <p class="sub" style="margin-bottom:10px">${t("noticesEditorNote")}</p>
-          ${nts.map((n, i) => `
+          ${nts.length ? nts.map((n, i) => `
           <div class="card" data-nt="${i}" style="margin-bottom:10px">
             <label class="fld">${t("fieldNotice")} ENG</label>
             <textarea data-f="text-en">${esc(n.text.en)}</textarea>
@@ -860,7 +861,7 @@
               <button class="btn green" style="margin-top:12px" data-nt-save="${i}">${t("save")}</button>
               <button class="btn danger" style="margin-top:12px" data-nt-del="${i}">${t("deleteWord")}</button>
             </div>
-          </div>`).join("")}
+          </div>`).join("") : `<div class="card"><p class="sub">${t("noNotices")}</p></div>`}
           <button class="btn ghost" id="nt-add">${t("addNotice")}</button>
           <button class="btn ghost" id="specials-reset" style="margin-top:18px">&#8634; ${t("resetSection")}</button>`;
 
@@ -912,7 +913,13 @@
     );
     app.querySelectorAll("[data-ev-del]").forEach(b =>
       b.addEventListener("click", () => {
-        const list = liveEvents().map(e => ({ title: { ...e.title }, when: { ...e.when }, desc: { ...e.desc } }));
+        if (!confirm(t("deleteConfirmItem"))) return;
+        const list = liveEvents().map(e => ({
+          id: e.id,
+          title: { ...e.title },
+          when: { ...e.when },
+          desc: { ...e.desc }
+        }));
         list.splice(Number(b.dataset.evDel), 1);
         saveEvents(list);
         toast(t("deletedToast"));
@@ -921,12 +928,20 @@
     );
     const evAdd = document.getElementById("ev-add");
     if (evAdd) evAdd.addEventListener("click", () => {
-      const list = liveEvents().map(e => ({ title: { ...e.title }, when: { ...e.when }, desc: { ...e.desc } }));
-      list.push({ title: { en: "", af: "" }, when: { en: "", af: "" }, desc: { en: "", af: "" } });
+      const list = liveEvents().map(e => ({
+        id: e.id,
+        title: { ...e.title },
+        when: { ...e.when },
+        desc: { ...e.desc }
+      }));
+      list.push({
+        id: "e" + Date.now(),
+        title: { en: "", af: "" },
+        when: { en: "", af: "" },
+        desc: { en: "", af: "" }
+      });
       saveEvents(list);
       renderStaff();
-      const cards = app.querySelectorAll("[data-ev]");
-      if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: "smooth" });
     });
 
     app.querySelectorAll("[data-nt-save]").forEach(b =>
@@ -942,6 +957,7 @@
     );
     app.querySelectorAll("[data-nt-del]").forEach(b =>
       b.addEventListener("click", () => {
+        if (!confirm(t("deleteConfirmItem"))) return;
         const list = liveNotices().map(n => ({ text: { ...n.text } }));
         list.splice(Number(b.dataset.ntDel), 1);
         saveNotices(list);
@@ -955,12 +971,11 @@
       list.push({ text: { en: "", af: "" } });
       saveNotices(list);
       renderStaff();
-      const cards = app.querySelectorAll("[data-nt]");
-      if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: "smooth" });
     });
 
     const specialsReset = document.getElementById("specials-reset");
     if (specialsReset) specialsReset.addEventListener("click", () => {
+      if (!confirm(t("resetSectionConfirm"))) return;
       state.events = null;
       state.notices = null;
       store.del("cp_events");
