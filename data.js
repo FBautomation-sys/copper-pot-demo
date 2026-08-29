@@ -494,6 +494,32 @@ const STRINGS = {
   staffTitle: { en: "Kitchen board", af: "Kombuisbord" },
   staffTabOrders: { en: "Orders", af: "Bestellings" },
   staffTabMenu: { en: "Edit menu", af: "Wysig spyskaart" },
+  staffTabSpecials: { en: "Edit specials", af: "Wysig spesiale" },
+  specialsEditorTitle: { en: "Events and specials", af: "Geleenthede en spesiale aanbiedinge" },
+  specialsEditorNote: {
+    en: "What you type here shows on the home screen and the events page right away. Fill in both languages, if you leave AFR empty we use the ENG text there too.",
+    af: "Wat jy hier tik wys dadelik op die tuisskerm en die geleenthede-bladsy. Vul albei tale in, as jy ENG leeg los gebruik ons die AFR teks daar ook."
+  },
+  noticesEditorTitle: { en: "Good to know notices", af: "Goed om te weet kennisgewings" },
+  noticesEditorNote: {
+    en: "These are the small notices on the home screen, allergens, busy times, that kind of thing.",
+    af: "Dit is die klein kennisgewings op die tuisskerm, allergene, besige tye, daai soort ding."
+  },
+  fieldTitle: { en: "Title", af: "Titel" },
+  fieldWhen: { en: "When", af: "Wanneer" },
+  fieldDesc: { en: "Details", af: "Besonderhede" },
+  fieldNotice: { en: "Notice", af: "Kennisgewing" },
+  save: { en: "Save", af: "Stoor" },
+  deleteWord: { en: "Delete", af: "Vee uit" },
+  addSpecial: { en: "+ Add a special", af: "+ Voeg 'n spesiale aanbieding by" },
+  addNotice: { en: "+ Add a notice", af: "+ Voeg 'n kennisgewing by" },
+  resetSection: { en: "Reset to original", af: "Herstel na oorspronklike" },
+  savedToast: { en: "Saved, it is live in the app", af: "Gestoor, dit is nou in die app" },
+  deletedToast: { en: "Deleted", af: "Uitgevee" },
+  noEvents: {
+    en: "Nothing on the board right now. Pop in anyway, the kettle is on.",
+    af: "Niks op die bord op die oomblik nie. Kom kuier in elk geval, die ketel is aan."
+  },
   enterPin: { en: "Staff PIN", af: "Personeel PIN" },
   demoPinHint: { en: "Demo PIN: 2021", af: "Demo PIN: 2021" },
   wrongPin: { en: "That PIN is not right. Try again.", af: "Daai PIN is nie reg nie. Probeer weer." },

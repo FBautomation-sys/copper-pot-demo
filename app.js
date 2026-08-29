@@ -27,6 +27,8 @@
     kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines}]
     eightySix: store.get("cp_86", []),       // [itemId]
     photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
+    events: store.get("cp_events", null),    // owner-edited events, null = use seeded EVENTS
+    notices: store.get("cp_notices", null),  // owner-edited notices, null = use seeded NOTICES
     staffAuthed: false,
     staffTab: "orders",
     editIndex: null                          // cart line being edited in the sheet
@@ -53,6 +55,8 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const item = id => MENU.find(m => m.id === id);
   const imgSrc = it => state.photos[it.id] || it.img;
+  const liveEvents = () => state.events || EVENTS;
+  const liveNotices = () => state.notices || NOTICES;
   const pad2 = n => String(n).padStart(2, "0");
   const minToHHMM = m => pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
 
@@ -246,16 +250,17 @@
         <a class="cta plain" href="${RESTAURANT.mapsUrl}" target="_blank" rel="noopener" style="text-decoration:none"><span class="ico">&#128205;</span>${t("ctaDirections")}</a>
       </div>
       <div class="pad">
+        ${liveEvents().length ? `
         <h2>${t("todayAtCopperPot")}</h2>
         <div class="card event-card">
-          <div class="when">${esc(tx(EVENTS[0].when))}</div>
-          <h3>${esc(tx(EVENTS[0].title))}</h3>
-          <p>${esc(tx(EVENTS[0].desc))}</p>
+          <div class="when">${esc(tx(liveEvents()[0].when))}</div>
+          <h3>${esc(tx(liveEvents()[0].title))}</h3>
+          <p>${esc(tx(liveEvents()[0].desc))}</p>
         </div>
-        <button class="btn ghost" data-go="events">${t("seeAllEvents")}</button>
+        <button class="btn ghost" data-go="events">${t("seeAllEvents")}</button>` : ""}
         <h2>${t("goodToKnow")}</h2>
         <div class="notice-list">
-          ${NOTICES.map(n => `<div class="card"><span class="ico">&#8505;&#65039;</span><span>${esc(tx(n.text))}</span></div>`).join("")}
+          ${liveNotices().map(n => `<div class="card"><span class="ico">&#8505;&#65039;</span><span>${esc(tx(n.text))}</span></div>`).join("")}
         </div>
         <p class="sub" style="margin-top:14px">${t("installHint")}</p>
       </div>
@@ -614,12 +619,12 @@
       <div class="pad">
         <h1>${t("eventsTitle")}</h1>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
-          ${EVENTS.map(e => `
+          ${liveEvents().length ? liveEvents().map(e => `
             <div class="card event-card">
               <div class="when">${esc(tx(e.when))}</div>
               <h3>${esc(tx(e.title))}</h3>
               <p>${esc(tx(e.desc))}</p>
-            </div>`).join("")}
+            </div>`).join("") : `<div class="card"><p class="sub">${t("noEvents")}</p></div>`}
         </div>
       </div>
     `;
@@ -817,6 +822,48 @@
             }).join("")}
           </div>`;
 
+    const evs = liveEvents();
+    const nts = liveNotices();
+    const specialsTab = `
+          <h2 style="margin-top:4px">${t("specialsEditorTitle")}</h2>
+          <p class="sub" style="margin-bottom:10px">${t("specialsEditorNote")}</p>
+          ${evs.map((e, i) => `
+          <div class="card" data-ev="${i}" style="margin-bottom:10px">
+            <label class="fld">${t("fieldTitle")} ENG</label>
+            <input type="text" data-f="title-en" value="${esc(e.title.en)}" />
+            <label class="fld">${t("fieldTitle")} AFR</label>
+            <input type="text" data-f="title-af" value="${esc(e.title.af)}" />
+            <label class="fld">${t("fieldWhen")} ENG</label>
+            <input type="text" data-f="when-en" value="${esc(e.when.en)}" />
+            <label class="fld">${t("fieldWhen")} AFR</label>
+            <input type="text" data-f="when-af" value="${esc(e.when.af)}" />
+            <label class="fld">${t("fieldDesc")} ENG</label>
+            <textarea data-f="desc-en">${esc(e.desc.en)}</textarea>
+            <label class="fld">${t("fieldDesc")} AFR</label>
+            <textarea data-f="desc-af">${esc(e.desc.af)}</textarea>
+            <div style="display:flex;gap:10px">
+              <button class="btn green" style="margin-top:12px" data-ev-save="${i}">${t("save")}</button>
+              <button class="btn danger" style="margin-top:12px" data-ev-del="${i}">${t("deleteWord")}</button>
+            </div>
+          </div>`).join("")}
+          <button class="btn ghost" id="ev-add">${t("addSpecial")}</button>
+
+          <h2>${t("noticesEditorTitle")}</h2>
+          <p class="sub" style="margin-bottom:10px">${t("noticesEditorNote")}</p>
+          ${nts.map((n, i) => `
+          <div class="card" data-nt="${i}" style="margin-bottom:10px">
+            <label class="fld">${t("fieldNotice")} ENG</label>
+            <textarea data-f="text-en">${esc(n.text.en)}</textarea>
+            <label class="fld">${t("fieldNotice")} AFR</label>
+            <textarea data-f="text-af">${esc(n.text.af)}</textarea>
+            <div style="display:flex;gap:10px">
+              <button class="btn green" style="margin-top:12px" data-nt-save="${i}">${t("save")}</button>
+              <button class="btn danger" style="margin-top:12px" data-nt-del="${i}">${t("deleteWord")}</button>
+            </div>
+          </div>`).join("")}
+          <button class="btn ghost" id="nt-add">${t("addNotice")}</button>
+          <button class="btn ghost" id="specials-reset" style="margin-top:18px">&#8634; ${t("resetSection")}</button>`;
+
     app.innerHTML = `
       <div class="staff-bar">
         <button class="back" id="staff-back">&#8592; ${t("backToApp")}</button>
@@ -826,9 +873,10 @@
         <div class="cat-tabs" style="padding-top:14px">
           <button class="cat-tab ${state.staffTab === "orders" ? "active" : ""}" data-stafftab="orders">&#128203; ${t("staffTabOrders")}</button>
           <button class="cat-tab ${state.staffTab === "menu" ? "active" : ""}" data-stafftab="menu">&#128247; ${t("staffTabMenu")}</button>
+          <button class="cat-tab ${state.staffTab === "specials" ? "active" : ""}" data-stafftab="specials">&#128227; ${t("staffTabSpecials")}</button>
         </div>
         <div class="pad">
-          ${state.staffTab === "menu" ? menuTab : ordersTab}
+          ${state.staffTab === "menu" ? menuTab : state.staffTab === "specials" ? specialsTab : ordersTab}
         </div>
       </main>
     `;
@@ -839,6 +887,87 @@
         window.scrollTo(0, 0);
       })
     );
+
+    // Specials editor: events and notices. Only present on the specials tab.
+    const field = (card, f) => card.querySelector(`[data-f="${f}"]`).value.trim();
+    const biling = (en, af) => ({ en: en || af, af: af || en });
+    const saveEvents = list => { state.events = list; store.set("cp_events", list); };
+    const saveNotices = list => { state.notices = list; store.set("cp_notices", list); };
+
+    app.querySelectorAll("[data-ev-save]").forEach(b =>
+      b.addEventListener("click", () => {
+        const i = Number(b.dataset.evSave);
+        const card = app.querySelector(`[data-ev="${i}"]`);
+        const list = liveEvents().map(e => ({ title: { ...e.title }, when: { ...e.when }, desc: { ...e.desc } }));
+        list[i] = {
+          id: "e" + (i + 1),
+          title: biling(field(card, "title-en"), field(card, "title-af")),
+          when: biling(field(card, "when-en"), field(card, "when-af")),
+          desc: biling(field(card, "desc-en"), field(card, "desc-af"))
+        };
+        saveEvents(list);
+        toast(t("savedToast"));
+        renderStaff();
+      })
+    );
+    app.querySelectorAll("[data-ev-del]").forEach(b =>
+      b.addEventListener("click", () => {
+        const list = liveEvents().map(e => ({ title: { ...e.title }, when: { ...e.when }, desc: { ...e.desc } }));
+        list.splice(Number(b.dataset.evDel), 1);
+        saveEvents(list);
+        toast(t("deletedToast"));
+        renderStaff();
+      })
+    );
+    const evAdd = document.getElementById("ev-add");
+    if (evAdd) evAdd.addEventListener("click", () => {
+      const list = liveEvents().map(e => ({ title: { ...e.title }, when: { ...e.when }, desc: { ...e.desc } }));
+      list.push({ title: { en: "", af: "" }, when: { en: "", af: "" }, desc: { en: "", af: "" } });
+      saveEvents(list);
+      renderStaff();
+      const cards = app.querySelectorAll("[data-ev]");
+      if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: "smooth" });
+    });
+
+    app.querySelectorAll("[data-nt-save]").forEach(b =>
+      b.addEventListener("click", () => {
+        const i = Number(b.dataset.ntSave);
+        const card = app.querySelector(`[data-nt="${i}"]`);
+        const list = liveNotices().map(n => ({ text: { ...n.text } }));
+        list[i] = { text: biling(field(card, "text-en"), field(card, "text-af")) };
+        saveNotices(list);
+        toast(t("savedToast"));
+        renderStaff();
+      })
+    );
+    app.querySelectorAll("[data-nt-del]").forEach(b =>
+      b.addEventListener("click", () => {
+        const list = liveNotices().map(n => ({ text: { ...n.text } }));
+        list.splice(Number(b.dataset.ntDel), 1);
+        saveNotices(list);
+        toast(t("deletedToast"));
+        renderStaff();
+      })
+    );
+    const ntAdd = document.getElementById("nt-add");
+    if (ntAdd) ntAdd.addEventListener("click", () => {
+      const list = liveNotices().map(n => ({ text: { ...n.text } }));
+      list.push({ text: { en: "", af: "" } });
+      saveNotices(list);
+      renderStaff();
+      const cards = app.querySelectorAll("[data-nt]");
+      if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: "smooth" });
+    });
+
+    const specialsReset = document.getElementById("specials-reset");
+    if (specialsReset) specialsReset.addEventListener("click", () => {
+      state.events = null;
+      state.notices = null;
+      store.del("cp_events");
+      store.del("cp_notices");
+      toast(t("savedToast"));
+      renderStaff();
+    });
     document.getElementById("staff-back").addEventListener("click", () => {
       state.staffAuthed = false;
       go("home");
