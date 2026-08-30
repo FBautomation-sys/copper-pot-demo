@@ -964,6 +964,14 @@
       })
     );
 
+    // Typing in ENG copies into AFR. Staff can still change AFR by hand before Save.
+    app.querySelectorAll("[data-f$='-en']").forEach(en => {
+      const card = en.closest(".card") || app;
+      const afr = card.querySelector(`[data-f="${en.dataset.f.replace(/-en$/, "-af")}"]`);
+      if (!afr) return;
+      en.addEventListener("input", () => { afr.value = en.value; });
+    });
+
     // Specials editor: events and notices. Only present on the specials tab.
     const field = (card, f) => card.querySelector(`[data-f="${f}"]`).value.trim();
     const biling = (en, af) => ({ en: en || af, af: af || en });
