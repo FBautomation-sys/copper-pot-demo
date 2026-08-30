@@ -250,24 +250,36 @@
         <button class="cta plain" data-go="book"><span class="ico">&#128197;</span>${t("ctaBook")}</button>
         <a class="cta plain" href="${RESTAURANT.mapsUrl}" target="_blank" rel="noopener" style="text-decoration:none"><span class="ico">&#128205;</span>${t("ctaDirections")}</a>
       </div>
-      <div class="pad">
+      <div class="pad" style="padding-bottom:4px">
+        <h2 style="margin-top:8px">${t("todayAtCopperPot")}</h2>
+      </div>
+      <div class="deck-rail">
+        ${FEATURED.map(id => item(id)).filter(m => m && !state.eightySix.includes(m.id)).map(m => `
+          <button class="deck-card" data-item="${m.id}">
+            <img src="${imgSrc(m)}" alt="${esc(tx(m.name))}" />
+            <div class="info">
+              <div class="name">${esc(tx(m.name))}</div>
+              <div class="price">${rand(m.price)}</div>
+            </div>
+          </button>`).join("")}
+      </div>
+      <div class="pad" style="padding-top:6px">
         ${liveEvents().length ? `
-        <h2>${t("todayAtCopperPot")}</h2>
-        <div class="card event-card">
-          <div class="when">${esc(tx(liveEvents()[0].when))}</div>
-          <h3>${esc(tx(liveEvents()[0].title))}</h3>
-          <p>${esc(tx(liveEvents()[0].desc))}</p>
-        </div>
+        <button class="special-card" data-go="events">
+          <img src="${esc(liveEvents()[0].img || "images/hero-venue.png")}" alt="" />
+          <div class="body">
+            <div class="when">${esc(tx(liveEvents()[0].when))}</div>
+            <h3>${esc(tx(liveEvents()[0].title))}</h3>
+            <p>${esc(tx(liveEvents()[0].desc))}</p>
+          </div>
+        </button>
         <button class="btn ghost" data-go="events">${t("seeAllEvents")}</button>` : ""}
-        ${liveNotices().length ? `
-        <h2>${t("goodToKnow")}</h2>
-        <div class="notice-list">
-          ${liveNotices().map(n => `<div class="card"><span class="ico">&#8505;&#65039;</span><span>${esc(tx(n.text))}</span></div>`).join("")}
-        </div>` : ""}
-        <p class="sub" style="margin-top:14px">${t("installHint")}</p>
       </div>
     `;
     wireGo(main);
+    main.querySelectorAll(".deck-card[data-item]").forEach(b =>
+      b.addEventListener("click", () => openSheet(b.dataset.item))
+    );
   }
 
   function wireGo(root) {
@@ -900,9 +912,16 @@
       b.addEventListener("click", () => {
         const i = Number(b.dataset.evSave);
         const card = app.querySelector(`[data-ev="${i}"]`);
-        const list = liveEvents().map(e => ({ title: { ...e.title }, when: { ...e.when }, desc: { ...e.desc } }));
+        const list = liveEvents().map(e => ({
+          id: e.id,
+          img: e.img,
+          title: { ...e.title },
+          when: { ...e.when },
+          desc: { ...e.desc }
+        }));
         list[i] = {
-          id: "e" + (i + 1),
+          id: list[i].id || "e" + (i + 1),
+          img: list[i].img || "images/hero-venue.png",
           title: biling(field(card, "title-en"), field(card, "title-af")),
           when: biling(field(card, "when-en"), field(card, "when-af")),
           desc: biling(field(card, "desc-en"), field(card, "desc-af"))
@@ -917,6 +936,7 @@
         if (!confirm(t("deleteConfirmItem"))) return;
         const list = liveEvents().map(e => ({
           id: e.id,
+          img: e.img,
           title: { ...e.title },
           when: { ...e.when },
           desc: { ...e.desc }
@@ -931,12 +951,14 @@
     if (evAdd) evAdd.addEventListener("click", () => {
       const list = liveEvents().map(e => ({
         id: e.id,
+        img: e.img,
         title: { ...e.title },
         when: { ...e.when },
         desc: { ...e.desc }
       }));
       list.push({
         id: "e" + Date.now(),
+        img: "images/hero-venue.png",
         title: { en: "", af: "" },
         when: { en: "", af: "" },
         desc: { en: "", af: "" }

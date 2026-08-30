@@ -276,11 +276,15 @@ const MENU = [
   }
 ];
 
+// Home screen "On the pot today" rail. These must exist in MENU.
+const FEATURED = ["b1", "s2", "m5", "m2", "d1"];
+
 const EVENTS = [
   {
     id: "e1",
     title: { en: "Live acoustic evenings", af: "Akoestiese aande" },
     when: { en: "Every Friday from 18:30", af: "Elke Vrydag vanaf 18:30" },
+    img: "images/hero-venue.png",
     desc: {
       en: "Local musicians on the terrace. No cover charge, just come early for a table.",
       af: "Plaaslike musikante op die terras. Geen toegangsfooi nie, kom net vroeg vir 'n tafel."
@@ -290,6 +294,7 @@ const EVENTS = [
     id: "e2",
     title: { en: "Burger Wednesdays", af: "Burger Woensdae" },
     when: { en: "Every Wednesday from 17:00", af: "Elke Woensdag vanaf 17:00" },
+    img: "images/dish-beef-burger.png",
     desc: {
       en: "Any burger and a glass of house wine or lemonade for R135.",
       af: "Enige burger en 'n glas huiswyn of limonade vir R135."
@@ -299,6 +304,7 @@ const EVENTS = [
     id: "e3",
     title: { en: "Sunday slow roast", af: "Sondag stadige braai" },
     when: { en: "Sundays from 12:00 while it lasts", af: "Sondae vanaf 12:00 terwyl dit hou" },
+    img: "images/dish-sirloin.png",
     desc: {
       en: "A proper Sunday roast out of the copper pot. Book a table, it goes fast.",
       af: "'n Regte Sondagbraai uit die koperpot. Bespreek 'n tafel, dit raak vinnig op."
@@ -394,9 +400,9 @@ const STRINGS = {
   ctaBook: { en: "Book a table", af: "Bespreek 'n tafel" },
   ctaDirections: { en: "Directions", af: "Aanwysings" },
 
-  todayAtCopperPot: { en: "On at The Copper Pot", af: "Aan die gang by The Copper Pot" },
+  todayAtCopperPot: { en: "On the pot today", af: "In die pot vandag" },
   goodToKnow: { en: "Good to know", af: "Goed om te weet" },
-  seeAllEvents: { en: "See all events", af: "Sien alle geleenthede" },
+  seeAllEvents: { en: "See all specials", af: "Sien alle spesiale aanbiedinge" },
 
   whatsappCart: { en: "WhatsApp cart", af: "WhatsApp mandjie" },
   cartBtnShort: { en: "Cart", af: "Mandjie" },
