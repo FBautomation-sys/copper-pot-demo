@@ -378,6 +378,47 @@ const DEMO_ORDERS = [
       { itemId: "d2", qty: 2, extras: [], notes: "" },
       { itemId: "dr1", qty: 1, extras: ["oatMilk"], notes: "" }
     ]
+  },
+  {
+    id: "CP-1039",
+    customer: "John",
+    phone: "",
+    placedMinAgo: 8,
+    status: "new",
+    table: "10",
+    split: true,
+    kind: "table",
+    lines: [
+      { itemId: "m5", qty: 1, extras: [], notes: "" },
+      { itemId: "dr3", qty: 1, extras: [], notes: "" }
+    ]
+  },
+  {
+    id: "CP-1038",
+    customer: "Mary",
+    phone: "",
+    placedMinAgo: 9,
+    status: "preparing",
+    table: "10",
+    split: true,
+    kind: "table",
+    lines: [
+      { itemId: "s1", qty: 1, extras: ["avo"], notes: "" },
+      { itemId: "dr1", qty: 1, extras: [], notes: "" }
+    ]
+  },
+  {
+    id: "CP-1037",
+    customer: "Table 8",
+    phone: "",
+    placedMinAgo: 18,
+    status: "ready",
+    table: "8",
+    split: false,
+    kind: "table",
+    lines: [
+      { itemId: "m2", qty: 2, extras: ["roti"], notes: "" }
+    ]
   }
 ];
 
@@ -397,8 +438,50 @@ const STRINGS = {
 
   ctaOrder: { en: "Order for collection", af: "Bestel vir afhaal" },
   ctaMenu: { en: "Menu", af: "Spyskaart" },
+  ctaTable: { en: "Order at your table", af: "Bestel by jou tafel" },
   ctaBook: { en: "Book a table", af: "Bespreek 'n tafel" },
   ctaDirections: { en: "Directions", af: "Aanwysings" },
+
+  tableTitle: { en: "Order at your table", af: "Bestel by jou tafel" },
+  tableIntro: {
+    en: "Put in the table number the waitress gave you. WhatsApp send only opens after that.",
+    af: "Sit die tafelnommer in wat die kelnerin vir jou gee. WhatsApp stuur maak eers daarna oop."
+  },
+  billOne: { en: "One bill for the table", af: "Een rekening vir die tafel" },
+  billSplit: { en: "Split the bill, I pay my own", af: "Deel die rekening, ek betaal my eie" },
+  oneBillHint: {
+    en: "Everyone at this table is on one bill.",
+    af: "Almal by hierdie tafel is op een rekening."
+  },
+  splitHint: {
+    en: "Each person orders on their own phone. Use the same table number and your first name.",
+    af: "Elke persoon bestel op hul eie foon. Gebruik dieselfde tafelnommer en jou voornaam."
+  },
+  tableNumber: { en: "Table number", af: "Tafelnommer" },
+  firstName: { en: "Your first name", af: "Jou voornaam" },
+  firstNamePh: { en: "e.g. John", af: "bv. John" },
+  tableContinue: { en: "See the menu", af: "Sien die spyskaart" },
+  tableNeedNumber: { en: "Put in the table number first", af: "Sit eers die tafelnommer in" },
+  tableNeedName: { en: "Put in your name for the split bill", af: "Sit jou naam in vir die deelrekening" },
+  tableBanner: { en: "Ordering for table {n}", af: "Bestel vir tafel {n}" },
+  tableBannerSplit: { en: "Table {n}, split bill for {name}", af: "Tafel {n}, deelrekening vir {name}" },
+  tablePayNote: {
+    en: "You pay at the table. We will confirm your order on WhatsApp.",
+    af: "Jy betaal by die tafel. Ons bevestig jou bestelling op WhatsApp."
+  },
+  openTables: { en: "Open tables", af: "Oop tafels" },
+  cashUpTable: { en: "Cash up this table", af: "Maak hierdie tafel toe" },
+  cashUpConfirm: {
+    en: "Mark this table as paid and close these tickets?",
+    af: "Merk hierdie tafel as betaal en maak die kaartjies toe?"
+  },
+  oneBillLabel: { en: "One bill", af: "Een rekening" },
+  splitLabel: { en: "Split", af: "Deelrekening" },
+  noOpenTables: {
+    en: "No open table tabs right now.",
+    af: "Geen oop tafelrekeninge op die oomblik nie."
+  },
+  tableTicket: { en: "Table {n}", af: "Tafel {n}" },
 
   todayAtCopperPot: { en: "On the pot today", af: "In die pot vandag" },
   goodToKnow: { en: "Good to know", af: "Goed om te weet" },

@@ -24,13 +24,14 @@
     cart: store.get("cp_cart", []),          // [{itemId, qty, extras:[extraKey], notes}]
     member: store.get("cp_member", null),    // {name, phone, points, stamps, since}
     pastOrders: store.get("cp_orders", []),  // [{id, when, lines, total}]
-    kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines}]
+    kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines, table, split, kind}]
     photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
     eventPhotos: store.get("cp_event_photos", {}), // {eventId: dataUrl}
     menuEdits: store.get("cp_menu_edits", {}), // {itemId: {name:{en,af}, desc:{en,af}}}
     featured: store.get("cp_featured", null), // [itemId] for home rail, null = FEATURED seed
     events: store.get("cp_events", null),    // owner-edited events, null = use seeded EVENTS
     notices: store.get("cp_notices", null),  // owner-edited notices, null = use seeded NOTICES
+    dineIn: store.get("cp_dinein", { mode: "collection", table: "", split: false, name: "" }),
     staffAuthed: false,
     staffTab: "orders",
     editDishId: null,                        // dish open in the staff menu editor
@@ -46,9 +47,30 @@
       phone: o.phone,
       placedAt: now - o.placedMinAgo * 60000,
       status: o.status,
-      lines: o.lines
+      lines: o.lines,
+      table: o.table || "",
+      split: !!o.split,
+      kind: o.kind || "collection"
     }));
     store.set("cp_kitchen", state.kitchen);
+  } else if (state.kitchen && !state.kitchen.some(o => o.table)) {
+    const now = Date.now();
+    const extras = DEMO_ORDERS.filter(o => o.table).map(o => ({
+      id: o.id,
+      customer: o.customer,
+      phone: o.phone,
+      placedAt: now - o.placedMinAgo * 60000,
+      status: o.status,
+      lines: o.lines,
+      table: o.table,
+      split: !!o.split,
+      kind: o.kind || "table"
+    }));
+    state.kitchen = extras.concat(state.kitchen);
+    store.set("cp_kitchen", state.kitchen);
+  }
+  if (!state.dineIn || typeof state.dineIn !== "object") {
+    state.dineIn = { mode: "collection", table: "", split: false, name: "" };
   }
 
   // ---------- helpers ----------
@@ -136,6 +158,18 @@
   const cartCount = () => state.cart.reduce((s, l) => s + l.qty, 0);
 
   function saveCart() { store.set("cp_cart", state.cart); }
+  function saveDineIn() { store.set("cp_dinein", state.dineIn); }
+  const isTableOrder = () => state.dineIn && state.dineIn.mode === "table";
+  function dineInReady() {
+    if (!isTableOrder()) return true;
+    if (!String(state.dineIn.table || "").trim()) return false;
+    if (state.dineIn.split && !String(state.dineIn.name || "").trim()) return false;
+    return true;
+  }
+  function setCollectionMode() {
+    state.dineIn = { mode: "collection", table: "", split: false, name: "" };
+    saveDineIn();
+  }
 
   function addPoints(spendRand, withStamp) {
     if (!state.member) return;
@@ -159,9 +193,23 @@
   // ---------- WhatsApp builders ----------
   function orderMessage() {
     const L = [];
-    L.push(state.lang === "af"
-      ? `Hallo ${RESTAURANT.shortName}, ek wil graag bestel vir afhaal:`
-      : `Hello ${RESTAURANT.shortName}, I would like to order for collection:`);
+    const tableNo = String((state.dineIn && state.dineIn.table) || "").trim();
+    if (isTableOrder() && tableNo) {
+      L.push(state.lang === "af"
+        ? `Hallo ${RESTAURANT.shortName}, bestelling vir tafel ${tableNo}:`
+        : `Hello ${RESTAURANT.shortName}, order for table ${tableNo}:`);
+      if (state.dineIn.split) {
+        L.push(state.lang === "af"
+          ? "Deelrekening. Naam: " + state.dineIn.name.trim()
+          : "Split bill. Name: " + state.dineIn.name.trim());
+      } else {
+        L.push(state.lang === "af" ? "Een rekening vir die tafel." : "One bill for the table.");
+      }
+    } else {
+      L.push(state.lang === "af"
+        ? `Hallo ${RESTAURANT.shortName}, ek wil graag bestel vir afhaal:`
+        : `Hello ${RESTAURANT.shortName}, I would like to order for collection:`);
+    }
     L.push("");
     for (const line of state.cart) {
       const it = item(line.itemId);
@@ -173,10 +221,10 @@
     }
     L.push("");
     L.push((state.lang === "af" ? "Totaal: " : "Total: ") + rand(cartTotal()));
-    if (state.member) L.push((state.lang === "af" ? "Naam: " : "Name: ") + state.member.name + " (" + state.member.phone + ")");
-    L.push(state.lang === "af"
-      ? "Ek betaal in die winkel met afhaal."
-      : "I will pay in store on collection.");
+    if (state.member && !isTableOrder()) L.push((state.lang === "af" ? "Naam: " : "Name: ") + state.member.name + " (" + state.member.phone + ")");
+    L.push(isTableOrder()
+      ? (state.lang === "af" ? "Ek betaal by die tafel." : "I will pay at the table.")
+      : (state.lang === "af" ? "Ek betaal in die winkel met afhaal." : "I will pay in store on collection."));
     return L.join("\n");
   }
 
@@ -256,7 +304,7 @@
     const views = {
       home: viewHome, menu: viewMenu, cart: viewCart, club: viewClub,
       book: viewBook, events: viewEvents, account: viewAccount,
-      contact: viewContact, more: viewMore
+      contact: viewContact, more: viewMore, table: viewTable
     };
     (views[state.screen] || viewHome)(main);
   }
@@ -275,10 +323,13 @@
         <div class="status-badge ${st.open ? "" : "closed"}"><span class="dot"></span>${st.label}</div>
       </div>
       <div class="cta-grid">
-        <button class="cta primary" data-go="menu"><span class="ico">&#128230;</span>${t("ctaOrder")}</button>
         <button class="cta secondary" data-go="menu"><span class="ico">&#128214;</span>${t("ctaMenu")}</button>
-        <button class="cta plain" data-go="book"><span class="ico">&#128197;</span>${t("ctaBook")}</button>
-        <a class="cta plain" href="${RESTAURANT.mapsUrl}" target="_blank" rel="noopener" style="text-decoration:none"><span class="ico">&#128205;</span>${t("ctaDirections")}</a>
+        <button class="cta primary" id="cta-collect"><span class="ico">&#128230;</span>${t("ctaOrder")}</button>
+        <button class="cta table" data-go="table"><span class="ico">&#127869;</span>${t("ctaTable")}</button>
+        <div class="cta-stack">
+          <button class="cta plain" data-go="book"><span class="ico">&#128197;</span>${t("ctaBook")}</button>
+          <a class="cta plain" href="${RESTAURANT.mapsUrl}" target="_blank" rel="noopener" style="text-decoration:none"><span class="ico">&#128205;</span>${t("ctaDirections")}</a>
+        </div>
       </div>
       <div class="pad" style="padding-bottom:4px">
         <h2 style="margin-top:8px">${t("todayAtCopperPot")}</h2>
@@ -307,9 +358,65 @@
       </div>
     `;
     wireGo(main);
+    const collectBtn = document.getElementById("cta-collect");
+    if (collectBtn) collectBtn.addEventListener("click", () => {
+      setCollectionMode();
+      go("menu");
+    });
     main.querySelectorAll(".deck-card[data-item]").forEach(b =>
       b.addEventListener("click", () => openSheet(b.dataset.item))
     );
+  }
+
+  function viewTable(main) {
+    if (!state.dineIn) state.dineIn = { mode: "table", table: "", split: false, name: "" };
+    const d = state.dineIn;
+    main.innerHTML = `
+      <div class="pad">
+        <h1>${t("tableTitle")}</h1>
+        <p class="sub">${t("tableIntro")}</p>
+        <div class="bill-choice" role="group">
+          <button type="button" class="choice ${!d.split ? "active" : ""}" data-split="0">${t("billOne")}</button>
+          <button type="button" class="choice ${d.split ? "active" : ""}" data-split="1">${t("billSplit")}</button>
+        </div>
+        <p class="sub" id="tbl-hint" style="margin-top:10px">${d.split ? t("splitHint") : t("oneBillHint")}</p>
+        <div class="card" style="margin-top:12px">
+          <label class="fld" for="tbl-no">${t("tableNumber")}</label>
+          <input type="text" id="tbl-no" inputmode="numeric" placeholder="10" value="${esc(d.table || "")}" />
+          <div id="tbl-name-wrap" ${d.split ? "" : "hidden"}>
+            <label class="fld" for="tbl-name">${t("firstName")}</label>
+            <input type="text" id="tbl-name" autocomplete="given-name" placeholder="${esc(t("firstNamePh"))}" value="${esc(d.name || "")}" />
+          </div>
+          <button class="btn copper" id="tbl-go">${t("tableContinue")}</button>
+        </div>
+      </div>
+    `;
+    const hint = document.getElementById("tbl-hint");
+    const nameWrap = document.getElementById("tbl-name-wrap");
+    main.querySelectorAll(".choice").forEach(b =>
+      b.addEventListener("click", () => {
+        state.dineIn.split = b.dataset.split === "1";
+        saveDineIn();
+        main.querySelectorAll(".choice").forEach(x => x.classList.toggle("active", x === b));
+        hint.textContent = state.dineIn.split ? t("splitHint") : t("oneBillHint");
+        nameWrap.hidden = !state.dineIn.split;
+      })
+    );
+    document.getElementById("tbl-go").addEventListener("click", () => {
+      state.dineIn.mode = "table";
+      state.dineIn.table = document.getElementById("tbl-no").value.trim();
+      state.dineIn.name = document.getElementById("tbl-name").value.trim();
+      saveDineIn();
+      if (!state.dineIn.table) {
+        toast(t("tableNeedNumber"));
+        return;
+      }
+      if (state.dineIn.split && !state.dineIn.name) {
+        toast(t("tableNeedName"));
+        return;
+      }
+      go("menu");
+    });
   }
 
   function wireGo(root) {
@@ -325,6 +432,9 @@
       <div class="cat-tabs">
         ${CATEGORIES.map(c => `<button class="cat-tab ${c.id === cat.id ? "active" : ""}" data-cat="${c.id}">${esc(tx(c.name))}</button>`).join("")}
       </div>
+      ${isTableOrder() && String(state.dineIn.table || "").trim() ? `<div class="table-banner">${esc(state.dineIn.split && state.dineIn.name
+        ? t("tableBannerSplit").replace("{n}", state.dineIn.table.trim()).replace("{name}", state.dineIn.name.trim())
+        : t("tableBanner").replace("{n}", state.dineIn.table.trim()))}</div>` : ""}
       ${tx(cat.note) ? `<div class="cat-note">${esc(tx(cat.note))}</div>` : ""}
       <div class="menu-list">
         ${items.map(m => `
@@ -480,8 +590,17 @@
         </div>
         <button class="btn ghost" data-go="menu">+ ${t("addMore")}</button>
         <div class="total-row"><span>${t("total")}</span><span>${rand(cartTotal())}</span></div>
-        <button class="btn wa" id="send-order">${waIcon}${t("sendOrder")}</button>
-        <p class="sub" style="margin-top:10px">${t("collectionNote")}</p>
+        ${isTableOrder() ? `
+        <div class="card" style="margin-top:4px">
+          <label class="fld" for="cart-table">${t("tableNumber")}</label>
+          <input type="text" id="cart-table" inputmode="numeric" placeholder="10" value="${esc(state.dineIn.table || "")}" />
+          ${state.dineIn.split ? `
+          <label class="fld" for="cart-name">${t("firstName")}</label>
+          <input type="text" id="cart-name" value="${esc(state.dineIn.name || "")}" />` : ""}
+        </div>` : ""}
+        <button class="btn wa" id="send-order" ${dineInReady() ? "" : "disabled"}>${waIcon}${t("sendOrder")}</button>
+        <p class="sub" style="margin-top:10px">${isTableOrder() ? t("tablePayNote") : t("collectionNote")}</p>
+        ${isTableOrder() && !dineInReady() ? `<p class="sub" style="color:var(--warn)">${state.dineIn.split && !String(state.dineIn.name || "").trim() && String(state.dineIn.table || "").trim() ? t("tableNeedName") : t("tableNeedNumber")}</p>` : ""}
       </div>
     `;
     wireGo(main);
@@ -498,13 +617,42 @@
         render();
       })
     );
-    document.getElementById("send-order").addEventListener("click", sendOrder);
+    const syncSend = () => {
+      if (!isTableOrder()) return;
+      const tbl = document.getElementById("cart-table");
+      const nm = document.getElementById("cart-name");
+      state.dineIn.table = tbl ? tbl.value.trim() : "";
+      if (nm) state.dineIn.name = nm.value.trim();
+      saveDineIn();
+      const btn = document.getElementById("send-order");
+      if (btn) btn.disabled = !dineInReady();
+    };
+    const cartTable = document.getElementById("cart-table");
+    const cartName = document.getElementById("cart-name");
+    if (cartTable) cartTable.addEventListener("input", syncSend);
+    if (cartName) cartName.addEventListener("input", syncSend);
+    document.getElementById("send-order").addEventListener("click", () => {
+      if (!dineInReady()) {
+        toast(isTableOrder() && state.dineIn.split && !String(state.dineIn.name || "").trim() ? t("tableNeedName") : t("tableNeedNumber"));
+        return;
+      }
+      sendOrder();
+    });
   }
 
   function sendOrder() {
+    if (!dineInReady()) {
+      toast(isTableOrder() && state.dineIn.split && !String(state.dineIn.name || "").trim() ? t("tableNeedName") : t("tableNeedNumber"));
+      return;
+    }
     const msg = orderMessage();
     const total = cartTotal();
     const orderId = "CP-" + (1043 + state.pastOrders.length);
+    const tableNo = isTableOrder() ? String(state.dineIn.table || "").trim() : "";
+    let customer = state.member ? state.member.name : (state.lang === "af" ? "Gas" : "Guest");
+    if (isTableOrder()) {
+      customer = state.dineIn.split ? state.dineIn.name.trim() : ((state.lang === "af" ? "Tafel " : "Table ") + tableNo);
+    }
 
     // guest history
     state.pastOrders.unshift({
@@ -518,11 +666,14 @@
     // demo: the order also lands on the kitchen board
     state.kitchen.unshift({
       id: orderId,
-      customer: state.member ? state.member.name : (state.lang === "af" ? "Gas" : "Guest"),
+      customer,
       phone: state.member ? state.member.phone : "",
       placedAt: Date.now(),
       status: "new",
-      lines: state.cart
+      lines: state.cart,
+      table: tableNo,
+      split: !!(isTableOrder() && state.dineIn.split),
+      kind: isTableOrder() ? "table" : "collection"
     });
     store.set("cp_kitchen", state.kitchen);
 
@@ -801,13 +952,52 @@
           <button class="btn green" style="margin-top:0" data-stafftab="menu">${t("editMenuBtn")}</button>
           <button class="btn copper" data-stafftab="specials">${t("editSpecialBtn")}</button>
           <button class="btn ghost" data-stafftab="deck">${t("editDeckBtn")}</button>
+          <h2>${t("openTables")}</h2>
+          ${(() => {
+            const orderTotal = o => (o.lines || []).reduce((s, l) => s + linePrice(l), 0);
+            const openByTable = {};
+            state.kitchen.filter(o => o.table && o.status !== "collected").forEach(o => {
+              const key = String(o.table).trim();
+              if (!openByTable[key]) openByTable[key] = [];
+              openByTable[key].push(o);
+            });
+            const tableNos = Object.keys(openByTable).sort((a, b) => (Number(a) - Number(b)) || a.localeCompare(b));
+            if (!tableNos.length) return `<div class="card"><p class="sub">${t("noOpenTables")}</p></div>`;
+            return tableNos.map(tno => {
+              const list = openByTable[tno];
+              const people = {};
+              list.forEach(o => {
+                const pk = o.split ? (String(o.customer || "").trim().toLowerCase() || "__split__") : "__one__";
+                if (!people[pk]) people[pk] = { name: o.split ? (o.customer || t("splitLabel")) : t("oneBillLabel"), total: 0 };
+                people[pk].total += orderTotal(o);
+              });
+              const rows = Object.keys(people).map(pk => {
+                const p = people[pk];
+                return `<div class="table-person"><span>${esc(p.name)}</span><span>${rand(p.total)}</span></div>`;
+              }).join("");
+              const grand = list.reduce((s, o) => s + orderTotal(o), 0);
+              const splitish = list.some(o => o.split);
+              return `
+                <div class="card" style="margin-bottom:10px">
+                  <div class="oc-head">
+                    <span class="oc-id">${esc(t("tableTicket").replace("{n}", tno))}</span>
+                    <span class="src-tag ${splitish ? "own" : ""}">${splitish ? t("splitLabel") : t("oneBillLabel")}</span>
+                  </div>
+                  ${rows}
+                  <div class="total-row" style="margin:8px 0 0"><span>${t("total")}</span><span>${rand(grand)}</span></div>
+                  <button class="btn green" data-cashup="${esc(tno)}">${t("cashUpTable")}</button>
+                </div>`;
+            }).join("");
+          })()}
           <h2>${t("liveOrders")}</h2>
           ${live.length ? live.map(o => {
             const mins = Math.max(0, Math.round((Date.now() - o.placedAt) / 60000));
             return `
             <div class="card order-card ${o.status}">
               <div class="oc-head">
-                <span class="oc-id">${esc(o.id)} · ${esc(o.customer)}</span>
+                <span class="oc-id">${esc(o.table
+                  ? (t("tableTicket").replace("{n}", o.table) + " · " + (o.split ? t("splitLabel") : t("oneBillLabel")) + (o.split && o.customer ? " · " + o.customer : ""))
+                  : (o.id + " · " + o.customer))}</span>
                 <span class="oc-status">${statusLabel[o.status]}</span>
               </div>
               <div class="oc-meta">${mins} min ${state.lang === "af" ? "gelede" : "ago"}${o.phone ? " · " + esc(o.phone) : ""}</div>
@@ -1167,6 +1357,18 @@
         const nextStatus = { new: "preparing", preparing: "ready", ready: "collected" };
         o.status = nextStatus[o.status];
         store.set("cp_kitchen", state.kitchen);
+        renderStaff();
+      })
+    );
+    app.querySelectorAll("[data-cashup]").forEach(b =>
+      b.addEventListener("click", () => {
+        if (!confirm(t("cashUpConfirm"))) return;
+        const tno = String(b.dataset.cashup);
+        state.kitchen.forEach(o => {
+          if (String(o.table) === tno && o.status !== "collected") o.status = "collected";
+        });
+        store.set("cp_kitchen", state.kitchen);
+        toast(t("savedToast"));
         renderStaff();
       })
     );

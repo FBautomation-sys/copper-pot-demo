@@ -239,6 +239,53 @@ h2 { font-size: 19px; margin: 18px 0 10px; }
 .cta.primary { background: var(--copper); color: #fff; }
 .cta.secondary { background: var(--green); color: #fff; }
 .cta.plain { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+.cta.table { background: var(--copper-dark); color: #fff; }
+.cta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cta-stack .cta {
+  min-height: 39px;
+  flex: 1;
+  justify-content: center;
+  padding: 8px 12px;
+  font-size: 14.5px;
+}
+.cta-stack .cta .ico { font-size: 18px; }
+
+.bill-choice { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.choice {
+  border: 2px solid var(--green);
+  background: var(--card);
+  color: var(--green);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-weight: 800;
+  font-size: 15.5px;
+  text-align: left;
+  min-height: 52px;
+}
+.choice.active { background: var(--green); color: #fff; }
+
+.table-banner {
+  margin: 4px 14px 0;
+  background: #f7e8dd;
+  color: var(--copper-dark);
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.table-person {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-weight: 700;
+}
+.table-person:last-of-type { border-bottom: 0; }
 
 .deck-rail {
   display: flex;
