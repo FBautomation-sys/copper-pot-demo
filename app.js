@@ -821,8 +821,7 @@
 
     const editDish = state.editDishId ? item(state.editDishId) : null;
     const menuTab = editDish ? `
-          <button class="dish-back" id="dish-edit-back">&#8592; ${t("backToDishes")}</button>
-          <h2 style="margin-top:8px">${esc(tx(editDish.name))}</h2>
+          <h2 style="margin-top:4px">${esc(tx(editDish.name))}</h2>
           <div class="card">
             <img src="${imgSrc(editDish)}" alt="" style="width:100%;height:160px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
             <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-bottom:8px">
@@ -928,9 +927,19 @@
           }).join("")}
           ${deckIds.length < 6 ? `<button class="btn ghost" id="deck-add">${t("addDeckItem")}</button>` : ""}`;
 
+    let staffBackAction = "guest";
+    let staffBackLabel = t("backToApp");
+    if (state.staffTab === "menu" && state.editDishId) {
+      staffBackAction = "dishes";
+      staffBackLabel = t("backToDishes");
+    } else if (state.staffTab !== "orders") {
+      staffBackAction = "kitchen";
+      staffBackLabel = t("backToKitchen");
+    }
+
     app.innerHTML = `
       <div class="staff-bar">
-        <button class="back" id="staff-back">&#8592; ${t("backToApp")}</button>
+        <button class="back" id="staff-back">&#8592; ${staffBackLabel}</button>
         <h1>${t("staffTitle")} · ${esc(RESTAURANT.shortName)}</h1>
       </div>
       <main style="padding-bottom:30px">
@@ -1063,12 +1072,6 @@
       toast(t("savedToast"));
       renderStaff();
     });
-    const dishEditBack = document.getElementById("dish-edit-back");
-    if (dishEditBack) dishEditBack.addEventListener("click", () => {
-      state.editDishId = null;
-      renderStaff();
-      window.scrollTo(0, 0);
-    });
     app.querySelectorAll("[data-edit-dish]").forEach(b =>
       b.addEventListener("click", () => {
         state.editDishId = b.dataset.editDish;
@@ -1101,6 +1104,19 @@
       renderStaff();
     });
     document.getElementById("staff-back").addEventListener("click", () => {
+      if (staffBackAction === "dishes") {
+        state.editDishId = null;
+        renderStaff();
+        window.scrollTo(0, 0);
+        return;
+      }
+      if (staffBackAction === "kitchen") {
+        state.editDishId = null;
+        state.staffTab = "orders";
+        renderStaff();
+        window.scrollTo(0, 0);
+        return;
+      }
       state.staffAuthed = false;
       state.editDishId = null;
       go("home");

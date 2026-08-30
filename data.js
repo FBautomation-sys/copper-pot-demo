@@ -564,6 +564,7 @@ const STRINGS = {
   demoPinHint: { en: "Demo PIN: 2021", af: "Demo PIN: 2021" },
   wrongPin: { en: "That PIN is not right. Try again.", af: "Daai PIN is nie reg nie. Probeer weer." },
   backToApp: { en: "Back to guest app", af: "Terug na gaste app" },
+  backToKitchen: { en: "Back to kitchen board", af: "Terug na kombuisbord" },
   liveOrders: { en: "Live orders", af: "Lewendige bestellings" },
   eightySix: { en: "86 list, mark items sold out", af: "86 lys, merk items uitverkoop" },
   dineInSpend: { en: "Add dine in spend to Copper Club", af: "Voeg eetplek besteding by Copper Klub" },
