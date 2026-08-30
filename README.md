@@ -27,8 +27,9 @@ Then open http://localhost:8080 on a phone or in mobile view in devtools.
 - Book a table via WhatsApp deep link, with a dog friendly option
 - Events and specials, notices (allergens, wait times, load shedding, seasonal)
 - Account with past orders, language and a delete-my-data button (POPIA)
-- Staff and kitchen mode, PIN 2021: live order board with
-  new, preparing, ready states, an 86 list, and dine in points capture
+- Staff and kitchen mode, PIN 2021: live order board shared across every
+  staff phone. A guest WhatsApp order appears on the board by itself.
+  Status changes (preparing, ready, collected) and deletes sync too.
 - AFR and ENG toggle across the whole UI
 - PWA: manifest, icons from the logo, offline app shell cache
 
@@ -40,7 +41,9 @@ Everything is fictional and seeded in `data.js`:
 - WhatsApp and phone use fictional 555 numbers, replace them in `RESTAURANT`
 - Every photo is AI generated and flagged with `photoAi: true` in the menu
   data so a real photo can replace it later
-- Three fake kitchen orders are seeded so the kitchen board looks alive
+- Sample kitchen tickets are seeded once onto the shared board so a first
+  look at staff mode is not empty. After that, real guest orders are the
+  source of truth on every phone.
 
 ## Google Analytics
 

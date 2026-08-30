@@ -1,4 +1,5 @@
-/* The Copper Pot Eatery, demo PWA. All state lives on the device. */
+/* The Copper Pot Eatery, demo PWA. Guest and menu state stay on the device.
+   Kitchen orders are shared live so every staff phone sees the same board. */
 
 (function () {
   "use strict";
@@ -24,7 +25,7 @@
     cart: store.get("cp_cart", []),          // [{itemId, qty, extras:[extraKey], notes}]
     member: store.get("cp_member", null),    // {name, phone, points, stamps, since}
     pastOrders: store.get("cp_orders", []),  // [{id, when, lines, total}]
-    kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines, table, split, kind}]
+    kitchen: store.get("cp_kitchen", []),  // [{id, customer, phone, placedAt, status, lines, table, split, kind}]
     photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
     eventPhotos: store.get("cp_event_photos", {}), // {eventId: dataUrl}
     menuEdits: store.get("cp_menu_edits", {}), // {itemId: {name:{en,af}, desc:{en,af}}}
@@ -38,37 +39,7 @@
     editIndex: null                          // cart line being edited in the sheet
   };
 
-  // Seed demo kitchen orders on first run.
-  if (!state.kitchen) {
-    const now = Date.now();
-    state.kitchen = DEMO_ORDERS.map(o => ({
-      id: o.id,
-      customer: o.customer,
-      phone: o.phone,
-      placedAt: now - o.placedMinAgo * 60000,
-      status: o.status,
-      lines: o.lines,
-      table: o.table || "",
-      split: !!o.split,
-      kind: o.kind || "collection"
-    }));
-    store.set("cp_kitchen", state.kitchen);
-  } else if (state.kitchen && !state.kitchen.some(o => o.table)) {
-    const now = Date.now();
-    const extras = DEMO_ORDERS.filter(o => o.table).map(o => ({
-      id: o.id,
-      customer: o.customer,
-      phone: o.phone,
-      placedAt: now - o.placedMinAgo * 60000,
-      status: o.status,
-      lines: o.lines,
-      table: o.table,
-      split: !!o.split,
-      kind: o.kind || "table"
-    }));
-    state.kitchen = extras.concat(state.kitchen);
-    store.set("cp_kitchen", state.kitchen);
-  }
+  if (!Array.isArray(state.kitchen)) state.kitchen = [];
   if (!state.dineIn || typeof state.dineIn !== "object") {
     state.dineIn = { mode: "browse", table: "", split: false, name: "" };
   } else {
@@ -165,6 +136,280 @@
       extras: (l.extras || []).slice(),
       notes: l.notes || ""
     }));
+  }
+
+  // ---------- live kitchen (every staff phone sees the same board) ----------
+  let kitchenFs = null;
+  let kitchenUnsub = null;
+  let kitchenMode = "unknown";
+  let kitchenLive = false;
+  let kitchenSig = "";
+  let kitchenSeeded = false;
+  let kitchenFallbackTried = false;
+  const recentlyDeleted = {};
+
+  function kitchenFirebase() {
+    if (kitchenFs) return kitchenFs;
+    if (!window.firebase || typeof KITCHEN_LIVE === "undefined") return null;
+    try {
+      let app;
+      try { app = firebase.app("copperPot"); }
+      catch (e) { app = firebase.initializeApp(KITCHEN_LIVE, "copperPot"); }
+      kitchenFs = app.firestore();
+      return kitchenFs;
+    } catch (e) {
+      console.warn("kitchen firebase", e);
+      return null;
+    }
+  }
+
+  function kitchenDocId(id) {
+    return String(id || "").replace(/\//g, "-").slice(0, 140) || ("CP-" + Date.now());
+  }
+
+  function kitchenPayload(o) {
+    return {
+      id: String(o.id),
+      customer: String(o.customer || ""),
+      phone: String(o.phone || ""),
+      placedAt: Number(o.placedAt) || Date.now(),
+      status: String(o.status || "new"),
+      table: String(o.table || ""),
+      split: !!o.split,
+      kind: String(o.kind || "collection"),
+      lines: cloneLines(o.lines)
+    };
+  }
+
+  function demoKitchenTickets() {
+    const now = Date.now();
+    return DEMO_ORDERS.map(o => ({
+      id: o.id,
+      customer: o.customer,
+      phone: o.phone || "",
+      placedAt: now - (o.placedMinAgo || 0) * 60000,
+      status: o.status,
+      lines: cloneLines(o.lines),
+      table: o.table || "",
+      split: !!o.split,
+      kind: o.kind || "collection"
+    }));
+  }
+
+  function permDenied(err) {
+    const code = String((err && err.code) || "");
+    const msg = String((err && err.message) || err || "");
+    return /permission/i.test(code + " " + msg);
+  }
+
+  function applyRemoteKitchen(orders) {
+    const now = Date.now();
+    const list = (orders || []).filter(o => {
+      if (!o || !o.id || o.id === "_seed") return false;
+      if (recentlyDeleted[o.id] && now - recentlyDeleted[o.id] < 15000) return false;
+      return true;
+    });
+    const remoteIds = new Set(list.map(o => o.id));
+    (state.kitchen || []).forEach(o => {
+      if (o && o.id && !remoteIds.has(o.id) && (now - (Number(o.placedAt) || 0)) < 15000) {
+        list.push(o);
+      }
+    });
+    list.sort((a, b) => (Number(b.placedAt) || 0) - (Number(a.placedAt) || 0));
+    const sig = JSON.stringify(list.map(o => [o.id, o.status, o.placedAt, o.table, o.customer]));
+    state.kitchen = list;
+    store.set("cp_kitchen", list);
+    if (sig === kitchenSig) return;
+    kitchenSig = sig;
+    refreshStaffBoard();
+  }
+
+  function refreshStaffBoard() {
+    if (state.screen !== "staff" || !state.staffAuthed || state.staffTab !== "orders" || state.editDishId) return;
+    const phoneEl = document.getElementById("di-phone");
+    const amountEl = document.getElementById("di-amount");
+    const keep = {
+      phone: phoneEl ? phoneEl.value : "",
+      amount: amountEl ? amountEl.value : "",
+      focus: document.activeElement && document.activeElement.id
+    };
+    renderStaff();
+    const p2 = document.getElementById("di-phone");
+    const a2 = document.getElementById("di-amount");
+    if (p2) p2.value = keep.phone;
+    if (a2) a2.value = keep.amount;
+    if (keep.focus && document.getElementById(keep.focus)) {
+      const el = document.getElementById(keep.focus);
+      el.focus();
+      if (typeof el.setSelectionRange === "function" && el.value) {
+        const n = el.value.length;
+        try { el.setSelectionRange(n, n); } catch (e) {}
+      }
+    }
+  }
+
+  function fallbackRef(db) {
+    return db.collection("clientFeedback").doc("copperPotKitchenLive");
+  }
+
+  function parseFallbackDoc(data) {
+    if (!data) return [];
+    if (Array.isArray(data.orders)) return data.orders.filter(Boolean);
+    if (data.orders && typeof data.orders === "object") {
+      return Object.keys(data.orders).map(k => data.orders[k]).filter(Boolean);
+    }
+    return [];
+  }
+
+  function seedFallback(db) {
+    if (kitchenSeeded) return;
+    kitchenSeeded = true;
+    const map = {};
+    demoKitchenTickets().forEach(o => { map[kitchenDocId(o.id)] = kitchenPayload(o); });
+    fallbackRef(db).set({
+      status: "copper-pot-kitchen",
+      copperPot: true,
+      seeded: true,
+      orders: map,
+      updatedAt: Date.now()
+    }, { merge: true }).catch(() => { kitchenSeeded = false; });
+  }
+
+  function subscribeFallback(db) {
+    if (kitchenUnsub) {
+      kitchenUnsub();
+      kitchenUnsub = null;
+    }
+    kitchenMode = "doc";
+    kitchenUnsub = fallbackRef(db).onSnapshot(snap => {
+      kitchenLive = true;
+      kitchenMode = "doc";
+      if (!snap.exists) {
+        seedFallback(db);
+        return;
+      }
+      const data = snap.data() || {};
+      const orders = parseFallbackDoc(data);
+      applyRemoteKitchen(orders);
+      if (!orders.length && !data.seeded) seedFallback(db);
+    }, err => {
+      kitchenLive = false;
+      console.warn("kitchen live fallback", err);
+    });
+  }
+
+  function seedCollection(db, snap) {
+    if (kitchenSeeded) return;
+    let n = 0;
+    let hasSeed = false;
+    snap.forEach(d => {
+      if (d.id === "_seed") hasSeed = true;
+      else n++;
+    });
+    if (n > 0 || hasSeed) return;
+    kitchenSeeded = true;
+    const batch = db.batch();
+    batch.set(db.collection("copperPotKitchen").doc("_seed"), { at: Date.now() });
+    demoKitchenTickets().forEach(o => {
+      batch.set(db.collection("copperPotKitchen").doc(kitchenDocId(o.id)), kitchenPayload(o));
+    });
+    batch.commit().catch(() => { kitchenSeeded = false; });
+  }
+
+  function startKitchenLive() {
+    const db = kitchenFirebase();
+    if (!db || kitchenUnsub) return;
+    kitchenUnsub = db.collection("copperPotKitchen").onSnapshot(snap => {
+      kitchenLive = true;
+      kitchenMode = "col";
+      const orders = [];
+      snap.forEach(d => {
+        if (d.id === "_seed") return;
+        const data = d.data();
+        if (data && data.id) orders.push(data);
+      });
+      applyRemoteKitchen(orders);
+      seedCollection(db, snap);
+    }, err => {
+      console.warn("kitchen col", err);
+      subscribeFallback(db);
+    });
+  }
+
+  function kitchenSaveOrder(o) {
+    store.set("cp_kitchen", state.kitchen);
+    const db = kitchenFirebase();
+    if (!db) return Promise.resolve();
+    const payload = kitchenPayload(o);
+    const id = kitchenDocId(o.id);
+    if (kitchenMode === "doc") {
+      return db.runTransaction(t => t.get(fallbackRef(db)).then(snap => {
+        const data = snap.exists ? (snap.data() || {}) : { status: "copper-pot-kitchen", copperPot: true, orders: {} };
+        let orders = {};
+        if (data.orders && !Array.isArray(data.orders)) orders = Object.assign({}, data.orders);
+        else if (Array.isArray(data.orders)) {
+          data.orders.forEach(x => { if (x && x.id) orders[kitchenDocId(x.id)] = x; });
+        }
+        orders[id] = payload;
+        t.set(fallbackRef(db), {
+          status: "copper-pot-kitchen",
+          copperPot: true,
+          seeded: true,
+          orders,
+          updatedAt: Date.now()
+        });
+      }));
+    }
+    return db.collection("copperPotKitchen").doc(id).set(payload).catch(err => {
+      if (permDenied(err) && !kitchenFallbackTried) {
+        kitchenFallbackTried = true;
+        kitchenMode = "doc";
+        subscribeFallback(db);
+        return kitchenSaveOrder(o);
+      }
+      return Promise.reject(err);
+    });
+  }
+
+  function kitchenDeleteIds(ids) {
+    const now = Date.now();
+    ids.forEach(xid => { recentlyDeleted[xid] = now; });
+    store.set("cp_kitchen", state.kitchen);
+    const db = kitchenFirebase();
+    if (!db || !ids.length) return Promise.resolve();
+    if (kitchenMode === "doc") {
+      return db.runTransaction(t => t.get(fallbackRef(db)).then(snap => {
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const orders = data.orders && !Array.isArray(data.orders) ? Object.assign({}, data.orders) : {};
+        ids.forEach(xid => {
+          delete orders[kitchenDocId(xid)];
+          delete orders[xid];
+        });
+        t.set(fallbackRef(db), {
+          status: "copper-pot-kitchen",
+          copperPot: true,
+          seeded: true,
+          orders,
+          updatedAt: Date.now()
+        });
+      }));
+    }
+    const batch = db.batch();
+    ids.forEach(xid => batch.delete(db.collection("copperPotKitchen").doc(kitchenDocId(xid))));
+    return batch.commit().catch(err => {
+      if (permDenied(err) && !kitchenFallbackTried) {
+        kitchenFallbackTried = true;
+        kitchenMode = "doc";
+        subscribeFallback(db);
+        return kitchenDeleteIds(ids);
+      }
+      return Promise.reject(err);
+    });
+  }
+
+  function newKitchenId() {
+    return "CP-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
   }
   function lineLabel(l) {
     const it = item(l.itemId);
@@ -708,7 +953,7 @@
     const lines = cloneLines(state.cart);
     const msg = orderMessage();
     const total = cartTotal();
-    const orderId = "CP-" + (1043 + state.pastOrders.length);
+    const orderId = newKitchenId();
     const tableNo = isTableOrder() ? String(state.dineIn.table || "").trim() : "";
     let customer = state.member ? state.member.name : (state.lang === "af" ? "Gas" : "Guest");
     if (isTableOrder()) {
@@ -724,8 +969,8 @@
     });
     store.set("cp_orders", state.pastOrders);
 
-    // demo: the order also lands on the kitchen board
-    state.kitchen.unshift({
+    // the order also lands on the shared kitchen board, live on every staff phone
+    const ticket = {
       id: orderId,
       customer,
       phone: state.member ? state.member.phone : "",
@@ -735,8 +980,10 @@
       table: tableNo,
       split: !!(isTableOrder() && state.dineIn.split),
       kind: isTableOrder() ? "table" : "collection"
-    });
+    };
+    state.kitchen.unshift(ticket);
     store.set("cp_kitchen", state.kitchen);
+    kitchenSaveOrder(ticket).catch(() => toast(t("kitchenSyncFail")));
 
     // loyalty: 1 point per R10 plus a stamp
     if (state.member) addPoints(total, true);
@@ -1009,7 +1256,7 @@
     const statusLabel = { new: t("statusNew"), preparing: t("statusPreparing"), ready: t("statusReady") };
 
     const ordersTab = `
-          <p class="sub" style="margin-bottom:12px">${t("kitchenEditorsNote")}</p>
+          <p class="sub" style="margin-bottom:12px">${t("liveAcrossPhones")}</p>
           <button class="btn green" style="margin-top:0" data-stafftab="menu">${t("editMenuBtn")}</button>
           <button class="btn copper" data-stafftab="specials">${t("editSpecialBtn")}</button>
           <button class="btn ghost" data-stafftab="deck">${t("editDeckBtn")}</button>
@@ -1200,7 +1447,7 @@
     app.innerHTML = `
       <div class="staff-bar">
         <button class="back" id="staff-back">&#8592; ${staffBackLabel}</button>
-        <h1>${t("staffTitle")} · ${esc(RESTAURANT.shortName)}</h1>
+        <h1>${t("staffTitle")} · ${esc(RESTAURANT.shortName)}${kitchenLive ? ` <span class="live-badge"><i></i> ${t("liveNow")}</span>` : ""}</h1>
       </div>
       <main style="padding-bottom:30px">
         <div class="cat-tabs" style="padding-top:14px">
@@ -1409,16 +1656,18 @@
       b.addEventListener("click", () => {
         const o = state.kitchen.find(k => k.id === b.dataset.adv);
         const nextStatus = { new: "preparing", preparing: "ready", ready: "collected" };
+        if (!o || !nextStatus[o.status]) return;
         o.status = nextStatus[o.status];
-        store.set("cp_kitchen", state.kitchen);
+        kitchenSaveOrder(o).catch(() => toast(t("kitchenSyncFail")));
         renderStaff();
       })
     );
     app.querySelectorAll("[data-del-order]").forEach(b =>
       b.addEventListener("click", () => {
         if (!confirm(t("deleteOrderConfirm"))) return;
-        state.kitchen = state.kitchen.filter(k => k.id !== b.dataset.delOrder);
-        store.set("cp_kitchen", state.kitchen);
+        const delId = b.dataset.delOrder;
+        state.kitchen = state.kitchen.filter(k => k.id !== delId);
+        kitchenDeleteIds([delId]).catch(() => toast(t("kitchenSyncFail")));
         toast(t("deletedToast"));
         renderStaff();
       })
@@ -1433,10 +1682,15 @@
           return p.name + ": " + rand(p.total) + (items ? " · " + items : "");
         }).join("\n");
         if (!confirm(t("cashUpConfirm") + "\n\n" + detail)) return;
+        const cashed = [];
         state.kitchen.forEach(o => {
-          if (String(o.table) === tno && o.status !== "collected") o.status = "collected";
+          if (String(o.table) === tno && o.status !== "collected") {
+            o.status = "collected";
+            cashed.push(o);
+          }
         });
-        store.set("cp_kitchen", state.kitchen);
+        cashed.reduce((p, o) => p.then(() => kitchenSaveOrder(o)), Promise.resolve())
+          .catch(() => toast(t("kitchenSyncFail")));
         toast(t("savedToast"));
         renderStaff();
       })
@@ -1445,8 +1699,9 @@
       b.addEventListener("click", () => {
         if (!confirm(t("deleteOrderConfirm"))) return;
         const ids = new Set(String(b.dataset.delIds).split(",").filter(Boolean));
+        const gone = Array.from(ids);
         state.kitchen = state.kitchen.filter(k => !ids.has(k.id));
-        store.set("cp_kitchen", state.kitchen);
+        kitchenDeleteIds(gone).catch(() => toast(t("kitchenSyncFail")));
         toast(t("deletedToast"));
         renderStaff();
       })
@@ -1455,8 +1710,9 @@
       b.addEventListener("click", () => {
         if (!confirm(t("deleteTableConfirm"))) return;
         const tno = String(b.dataset.delTable);
+        const gone = state.kitchen.filter(k => String(k.table || "") === tno).map(k => k.id);
         state.kitchen = state.kitchen.filter(k => String(k.table || "") !== tno);
-        store.set("cp_kitchen", state.kitchen);
+        kitchenDeleteIds(gone).catch(() => toast(t("kitchenSyncFail")));
         toast(t("deletedToast"));
         renderStaff();
       })
@@ -1589,6 +1845,7 @@
   // ---------- boot ----------
   function boot() {
     document.getElementById("splash-tagline").textContent = tx(RESTAURANT.tagline);
+    startKitchenLive();
     render();
     setTimeout(() => document.getElementById("splash").classList.add("hide"), 1100);
     if ("serviceWorker" in navigator && location.protocol !== "file:") {

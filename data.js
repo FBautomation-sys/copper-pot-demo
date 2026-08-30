@@ -43,6 +43,17 @@ const RESTAURANT = {
   }
 };
 
+// Public Firebase web config (same key already on the AI Optimization site).
+// Used so guest orders land on every staff phone, not only the phone that sent them.
+const KITCHEN_LIVE = {
+  apiKey: "AIzaSyBM6PfzVRQcLu31TJl43KswQIp9Um-sNhE",
+  authDomain: "ai-visibility-reports.firebaseapp.com",
+  projectId: "ai-visibility-reports",
+  storageBucket: "ai-visibility-reports.firebasestorage.app",
+  messagingSenderId: "973327362646",
+  appId: "1:973327362646:web:e3c5fe2b4fa9c1aa5e29f7"
+};
+
 const LOYALTY = {
   name: "Copper Club",
   pointsPerRand: 0.1, // 1 point per R10
@@ -589,6 +600,15 @@ const STRINGS = {
     en: "Three editors. Menu plates, today's special, and the plates on the pot.",
     af: "Drie redigeerders. Spyskaartborde, vandag se spesiale, en die borde in die pot."
   },
+  liveNow: { en: "Live", af: "Live" },
+  liveAcrossPhones: {
+    en: "This board is live on every staff phone. When a guest sends an order, it appears here on its own, the same moment WhatsApp gets it.",
+    af: "Hierdie bord is lewendig op elke personeel-foon. As 'n gas 'n bestelling stuur, kom dit vanself hier aan, dieselfde oomblik as WhatsApp."
+  },
+  kitchenSyncFail: {
+    en: "WhatsApp is open. The kitchen board could not update. Check the wifi.",
+    af: "WhatsApp is oop. Die kombuisbord kon nie opdateer nie. Check die wifi."
+  },
   editMenuBtn: { en: "Edit menu", af: "Wysig spyskaart" },
   editSpecialBtn: { en: "Edit today's special", af: "Wysig vandag se spesiale" },
   editDeckBtn: { en: "Edit on the pot today", af: "Wysig in die pot vandag" },
@@ -673,8 +693,8 @@ const STRINGS = {
     af: "Vee hierdie bestelling van die kombuisbord af?"
   },
   noLiveOrders: {
-    en: "No live orders right now. The board updates as WhatsApp orders come in.",
-    af: "Geen lewendige bestellings op die oomblik nie. Die bord dateer op soos WhatsApp bestellings inkom."
+    en: "No live orders right now. The moment a guest sends one, it appears here on every staff phone.",
+    af: "Geen lewendige bestellings op die oomblik nie. Die oomblik wat 'n gas een stuur, kom dit hier aan op elke personeel-foon."
   },
   available: { en: "Available", af: "Beskikbaar" },
   photoManager: { en: "Menu dishes", af: "Spyskaartgeregte" },
