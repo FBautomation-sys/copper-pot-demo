@@ -27,11 +27,13 @@
     kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines}]
     photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
     eventPhotos: store.get("cp_event_photos", {}), // {eventId: dataUrl}
+    menuEdits: store.get("cp_menu_edits", {}), // {itemId: {name:{en,af}, desc:{en,af}}}
     featured: store.get("cp_featured", null), // [itemId] for home rail, null = FEATURED seed
     events: store.get("cp_events", null),    // owner-edited events, null = use seeded EVENTS
     notices: store.get("cp_notices", null),  // owner-edited notices, null = use seeded NOTICES
     staffAuthed: false,
     staffTab: "orders",
+    editDishId: null,                        // dish open in the staff menu editor
     editIndex: null                          // cart line being edited in the sheet
   };
 
@@ -54,7 +56,16 @@
   const tx = obj => (obj ? obj[state.lang] : "");
   const rand = n => "R" + (Number.isInteger(n) ? n : n.toFixed(2));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const item = id => MENU.find(m => m.id === id);
+  function withEdits(m) {
+    if (!m) return m;
+    const ed = state.menuEdits[m.id];
+    if (!ed) return m;
+    return Object.assign({}, m, {
+      name: ed.name || m.name,
+      desc: ed.desc || m.desc
+    });
+  }
+  const item = id => withEdits(MENU.find(m => m.id === id));
   const imgSrc = it => state.photos[it.id] || it.img;
   const liveEvents = () => state.events || EVENTS;
   const liveNotices = () => state.notices || NOTICES;
@@ -293,7 +304,7 @@
 
   function viewMenu(main) {
     const cat = CATEGORIES.find(c => c.id === state.activeCat) || CATEGORIES[0];
-    const items = MENU.filter(m => m.cat === cat.id);
+    const items = MENU.filter(m => m.cat === cat.id).map(m => item(m.id));
     main.innerHTML = `
       <div class="cat-tabs">
         ${CATEGORIES.map(c => `<button class="cat-tab ${c.id === cat.id ? "active" : ""}" data-cat="${c.id}">${esc(tx(c.name))}</button>`).join("")}
@@ -809,23 +820,43 @@
             <button class="btn copper" id="di-add">${t("addPoints")}</button>
           </div>`;
 
-    const menuTab = `
+    const editDish = state.editDishId ? item(state.editDishId) : null;
+    const menuTab = editDish ? `
+          <button class="dish-back" id="dish-edit-back">&#8592; ${t("backToDishes")}</button>
+          <h2 style="margin-top:8px">${esc(tx(editDish.name))}</h2>
+          <div class="card">
+            <img src="${imgSrc(editDish)}" alt="" style="width:100%;height:160px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
+            <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-bottom:8px">
+              <button class="pbtn" data-photo-cam="${editDish.id}">${t("takePhoto")}</button>
+              <button class="pbtn" data-photo-gal="${editDish.id}">${t("fromGallery")}</button>
+              ${state.photos[editDish.id] ? `<button class="pbtn plain" data-photo-reset="${editDish.id}">${t("resetPhoto")}</button>` : ""}
+            </div>
+            <label class="fld">${t("fieldName")} ENG</label>
+            <input type="text" data-f="name-en" value="${esc(editDish.name.en)}" />
+            <label class="fld">${t("fieldName")} AFR</label>
+            <input type="text" data-f="name-af" value="${esc(editDish.name.af)}" />
+            <label class="fld">${t("fieldDesc")} ENG</label>
+            <textarea data-f="desc-en">${esc(editDish.desc.en)}</textarea>
+            <label class="fld">${t("fieldDesc")} AFR</label>
+            <textarea data-f="desc-af">${esc(editDish.desc.af)}</textarea>
+            <button class="btn green" id="dish-save">${t("save")}</button>
+            ${state.menuEdits[editDish.id] ? `<button class="btn ghost" id="dish-reset-copy">${t("resetDishCopy")}</button>` : ""}
+          </div>` : `
           <h2 style="margin-top:4px">${t("photoManager")}</h2>
           <div class="card">
             <p class="sub" style="margin-bottom:6px">${t("photoManagerNote")}</p>
-            ${MENU.map(m => `
-              <div class="photo-row">
-                <img src="${imgSrc(m)}" alt="" />
+            ${MENU.map(m => {
+              const it = item(m.id);
+              return `
+              <button type="button" class="photo-row tap" data-edit-dish="${m.id}">
+                <img src="${imgSrc(it)}" alt="" />
                 <div class="mid">
-                  <div class="nm">${esc(tx(m.name))}</div>
+                  <div class="nm">${esc(tx(it.name))}</div>
                   <span class="src-tag ${state.photos[m.id] ? "own" : ""}">${state.photos[m.id] ? t("yourPhotoLabel") : t("aiLabel")}</span>
                 </div>
-                <div class="pbtns">
-                  <button class="pbtn" data-photo-cam="${m.id}">${t("takePhoto")}</button>
-                  <button class="pbtn" data-photo-gal="${m.id}">${t("fromGallery")}</button>
-                  ${state.photos[m.id] ? `<button class="pbtn plain" data-photo-reset="${m.id}">${t("resetPhoto")}</button>` : ""}
-                </div>
-              </div>`).join("")}
+                <span class="chev" aria-hidden="true">&#8250;</span>
+              </button>`;
+            }).join("")}
           </div>`;
 
     const evs = liveEvents();
@@ -887,7 +918,7 @@
             <img src="${imgSrc(m)}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
             <label class="fld">${t("pickDish")}</label>
             <select data-deck-pick="${i}">
-              ${MENU.map(opt => `<option value="${opt.id}" ${opt.id === id ? "selected" : ""}>${esc(tx(opt.name))} · ${rand(opt.price)}</option>`).join("")}
+              ${MENU.map(opt => `<option value="${opt.id}" ${opt.id === id ? "selected" : ""}>${esc(tx(item(opt.id).name))} · ${rand(opt.price)}</option>`).join("")}
             </select>
             <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-top:10px">
               <button class="pbtn" data-photo-cam="${id}">${t("takePhoto")}</button>
@@ -1033,8 +1064,46 @@
       toast(t("savedToast"));
       renderStaff();
     });
+    const dishEditBack = document.getElementById("dish-edit-back");
+    if (dishEditBack) dishEditBack.addEventListener("click", () => {
+      state.editDishId = null;
+      renderStaff();
+      window.scrollTo(0, 0);
+    });
+    app.querySelectorAll("[data-edit-dish]").forEach(b =>
+      b.addEventListener("click", () => {
+        state.editDishId = b.dataset.editDish;
+        renderStaff();
+        window.scrollTo(0, 0);
+      })
+    );
+    const dishSave = document.getElementById("dish-save");
+    if (dishSave) dishSave.addEventListener("click", () => {
+      const card = dishSave.closest(".card");
+      const id = state.editDishId;
+      const seed = MENU.find(m => m.id === id);
+      if (!seed || !card) return;
+      const name = biling(field(card, "name-en"), field(card, "name-af"));
+      const desc = biling(field(card, "desc-en"), field(card, "desc-af"));
+      if (!name.en && !name.af) {
+        toast(state.lang === "af" ? "Tik 'n naam in" : "Type a name first");
+        return;
+      }
+      state.menuEdits[id] = { name, desc };
+      store.set("cp_menu_edits", state.menuEdits);
+      toast(t("savedToast"));
+      renderStaff();
+    });
+    const dishResetCopy = document.getElementById("dish-reset-copy");
+    if (dishResetCopy) dishResetCopy.addEventListener("click", () => {
+      delete state.menuEdits[state.editDishId];
+      store.set("cp_menu_edits", state.menuEdits);
+      toast(t("savedToast"));
+      renderStaff();
+    });
     document.getElementById("staff-back").addEventListener("click", () => {
       state.staffAuthed = false;
+      state.editDishId = null;
       go("home");
     });
     app.querySelectorAll("[data-adv]").forEach(b =>

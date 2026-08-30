@@ -583,11 +583,14 @@ const STRINGS = {
     af: "Geen lewendige bestellings op die oomblik nie. Die bord dateer op soos WhatsApp bestellings inkom."
   },
   available: { en: "Available", af: "Beskikbaar" },
-  photoManager: { en: "Menu photos", af: "Spyskaartfoto's" },
+  photoManager: { en: "Menu dishes", af: "Spyskaartgeregte" },
   photoManagerNote: {
-    en: "This is where the restaurant loads its own dish photos. Take photo opens the camera. From gallery picks a picture already on the phone. The menu updates right away. Reset brings back the original.",
-    af: "Hier laai die restaurant sy eie geregfoto's. Neem foto maak die kamera oop. Uit gallery kies 'n prent wat al op die foon is. Die spyskaart dateer dadelik op. Herstel bring die oorspronklike terug."
+    en: "Tap a dish name to open it. Then you can take a photo, pick one from the gallery, and change the name and the description. Save updates the guest menu on this phone.",
+    af: "Tik op 'n geregnaam om dit oop te maak. Dan kan jy 'n foto neem, een uit die gallery kies, en die naam en die beskrywing verander. Stoor dateer die gaste-spyskaart op hierdie foon op."
   },
+  backToDishes: { en: "Back to dishes", af: "Terug na geregte" },
+  fieldName: { en: "Name", af: "Naam" },
+  resetDishCopy: { en: "Reset name and description", af: "Herstel naam en beskrywing" },
   replacePhoto: { en: "Replace photo", af: "Vervang foto" },
   resetPhoto: { en: "Reset", af: "Herstel" },
   photoUpdated: { en: "Photo updated, check the menu", af: "Foto opgedateer, kyk na die spyskaart" },

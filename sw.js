@@ -1,7 +1,7 @@
 /* The Copper Pot Eatery. Network first for code so updates show right away,
    cache first for images which never change names. */
 
-const CACHE = "copper-pot-v9";
+const CACHE = "copper-pot-v10";
 const SHELL = [
   "./",
   "./index.html",

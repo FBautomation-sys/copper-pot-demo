@@ -698,6 +698,16 @@ label.fld { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6p
   border-bottom: 1px solid var(--line);
 }
 .photo-row:last-of-type { border-bottom: 0; }
+.photo-row.tap {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  color: inherit;
+}
+.photo-row.tap:active { background: #f4ebe1; }
 .photo-row img {
   width: 56px;
   height: 56px;
@@ -706,7 +716,22 @@ label.fld { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6p
   flex: 0 0 auto;
 }
 .photo-row .mid { flex: 1; min-width: 0; }
-.photo-row .nm { font-weight: 600; font-size: 14.5px; }
+.photo-row .nm { font-weight: 700; font-size: 15px; color: var(--copper-dark); }
+.photo-row .chev {
+  flex: 0 0 auto;
+  color: var(--copper);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 400;
+}
+.dish-back {
+  border: 0;
+  background: transparent;
+  color: var(--copper-dark);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 4px 0 2px;
+}
 .src-tag {
   display: inline-block;
   margin-top: 3px;
