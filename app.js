@@ -74,6 +74,22 @@
   const pad2 = n => String(n).padStart(2, "0");
   const minToHHMM = m => pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
 
+  function translateEnToAf(text) {
+    const q = String(text || "").trim().slice(0, 450);
+    if (!q) return Promise.resolve("");
+    const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(q) + "&langpair=en|af";
+    return fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        let out = (data && data.responseData && data.responseData.translatedText) || "";
+        if (/MYMEMORY WARNING/i.test(out)) return "";
+        out = out.replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+        if (!out.trim() || out.trim().toLowerCase() === q.toLowerCase()) return "";
+        return out;
+      })
+      .catch(() => "");
+  }
+
   function toast(msg) {
     const el = document.getElementById("toast");
     el.textContent = msg;
@@ -964,12 +980,28 @@
       })
     );
 
-    // Typing in ENG copies into AFR. Staff can still change AFR by hand before Save.
+    // Typing in ENG fills AFR with Afrikaans. Staff can still change AFR by hand before Save.
     app.querySelectorAll("[data-f$='-en']").forEach(en => {
       const card = en.closest(".card") || app;
       const afr = card.querySelector(`[data-f="${en.dataset.f.replace(/-en$/, "-af")}"]`);
       if (!afr) return;
-      en.addEventListener("input", () => { afr.value = en.value; });
+      let dirty = false;
+      let timer = 0;
+      let seq = 0;
+      afr.addEventListener("input", () => { dirty = true; });
+      en.addEventListener("input", () => {
+        dirty = false;
+        clearTimeout(timer);
+        const my = ++seq;
+        timer = setTimeout(() => {
+          const source = en.value.trim();
+          if (!source) return;
+          translateEnToAf(source).then(af => {
+            if (my !== seq || dirty || !af) return;
+            afr.value = af;
+          });
+        }, 550);
+      });
     });
 
     // Specials editor: events and notices. Only present on the specials tab.

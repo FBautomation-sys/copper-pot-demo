@@ -1,7 +1,7 @@
 /* The Copper Pot Eatery. Network first for code so updates show right away,
    cache first for images which never change names. */
 
-const CACHE = "copper-pot-v14";
+const CACHE = "copper-pot-v15";
 const SHELL = [
   "./",
   "./index.html",
@@ -28,6 +28,7 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
   const isImage = url.pathname.includes("/images/");
 
   if (isImage) {
