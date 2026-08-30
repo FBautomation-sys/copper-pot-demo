@@ -176,15 +176,16 @@
           <img src="images/logo.png" alt="" />
           <span>${esc(RESTAURANT.shortName)}</span>
         </div>
-        <div class="spacer"></div>
-        <div class="lang-toggle" role="group" aria-label="Language">
-          <button data-lang="af" class="${state.lang === "af" ? "active" : ""}">AFR</button>
-          <button data-lang="en" class="${state.lang === "en" ? "active" : ""}">ENG</button>
+        <div class="topbar-actions">
+          <div class="lang-toggle" role="group" aria-label="Language">
+            <button data-lang="af" class="${state.lang === "af" ? "active" : ""}">AFR</button>
+            <button data-lang="en" class="${state.lang === "en" ? "active" : ""}">ENG</button>
+          </div>
+          <button class="cart-btn" id="btn-cart" aria-label="${t("whatsappCart")}">
+            ${waIcon}<span>${t("cartBtnShort")}</span>
+            ${cartCount() ? `<span class="badge">${cartCount()}</span>` : ""}
+          </button>
         </div>
-        <button class="cart-btn" id="btn-cart" aria-label="${t("whatsappCart")}">
-          ${waIcon}<span>${t("whatsappCart")}</span>
-          ${cartCount() ? `<span class="badge">${cartCount()}</span>` : ""}
-        </button>
       </header>
       <main id="main"></main>
       <nav class="bottom-nav" id="bottom-nav">

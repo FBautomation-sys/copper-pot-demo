@@ -399,6 +399,7 @@ const STRINGS = {
   seeAllEvents: { en: "See all events", af: "Sien alle geleenthede" },
 
   whatsappCart: { en: "WhatsApp cart", af: "WhatsApp mandjie" },
+  cartBtnShort: { en: "Cart", af: "Mandjie" },
   addToCart: { en: "Add to WhatsApp cart", af: "Voeg by WhatsApp mandjie" },
   cartEmptyTitle: { en: "Nothing in your basket yet", af: "Nog niks in jou mandjie nie" },
   cartEmptyBody: {

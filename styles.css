@@ -57,36 +57,44 @@ img { display: block; }
 #splash img { width: 160px; height: 160px; border-radius: 50%; }
 #splash .tagline { color: var(--ink-soft); font-size: 15px; }
 
-/* Top bar */
+/* Top bar, stacked so the name, AFR/ENG and cart all fit on a phone */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 50;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 12px 10px;
   background: var(--cream);
   border-bottom: 1px solid var(--line);
 }
 .topbar .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
-.topbar .brand img { width: 38px; height: 38px; border-radius: 50%; }
+.topbar .brand img { width: 40px; height: 40px; border-radius: 50%; flex: 0 0 auto; }
 .topbar .brand span {
-  font-weight: 700;
-  font-size: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow: visible;
 }
-.topbar .spacer { flex: 1; }
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 
 .lang-toggle {
   display: flex;
+  flex: 0 0 auto;
   border: 2px solid var(--green);
   border-radius: 999px;
   overflow: hidden;
@@ -95,27 +103,30 @@ img { display: block; }
   border: 0;
   background: transparent;
   color: var(--green);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 13px;
-  padding: 6px 10px;
-  min-height: 34px;
+  padding: 8px 14px;
+  min-height: 40px;
+  min-width: 52px;
 }
 .lang-toggle button.active { background: var(--green); color: #fff; }
 
 .cart-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   background: #25d366;
   color: #fff;
   border: 0;
   border-radius: 999px;
-  padding: 8px 12px;
-  font-weight: 700;
-  font-size: 13px;
-  min-height: 44px;
+  padding: 8px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  min-height: 40px;
   box-shadow: var(--shadow);
   position: relative;
+  flex: 0 0 auto;
 }
 .cart-btn svg { width: 20px; height: 20px; fill: #fff; }
 .cart-btn .badge {
