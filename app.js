@@ -27,6 +27,8 @@
     kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines}]
     eightySix: store.get("cp_86", []),       // [itemId]
     photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
+    eventPhotos: store.get("cp_event_photos", {}), // {eventId: dataUrl}
+    featured: store.get("cp_featured", null), // [itemId] for home rail, null = FEATURED seed
     events: store.get("cp_events", null),    // owner-edited events, null = use seeded EVENTS
     notices: store.get("cp_notices", null),  // owner-edited notices, null = use seeded NOTICES
     staffAuthed: false,
@@ -57,6 +59,8 @@
   const imgSrc = it => state.photos[it.id] || it.img;
   const liveEvents = () => state.events || EVENTS;
   const liveNotices = () => state.notices || NOTICES;
+  const liveFeatured = () => (state.featured && state.featured.length) ? state.featured : FEATURED;
+  const eventImg = e => (e && (state.eventPhotos[e.id] || e.img)) || "images/hero-venue.png";
   const pad2 = n => String(n).padStart(2, "0");
   const minToHHMM = m => pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
 
@@ -254,7 +258,7 @@
         <h2 style="margin-top:8px">${t("todayAtCopperPot")}</h2>
       </div>
       <div class="deck-rail">
-        ${FEATURED.map(id => item(id)).filter(m => m && !state.eightySix.includes(m.id)).map(m => `
+        ${liveFeatured().map(id => item(id)).filter(m => m && !state.eightySix.includes(m.id)).map(m => `
           <button class="deck-card" data-item="${m.id}">
             <img src="${imgSrc(m)}" alt="${esc(tx(m.name))}" />
             <div class="info">
@@ -266,7 +270,7 @@
       <div class="pad" style="padding-top:6px">
         ${liveEvents().length ? `
         <button class="special-card" data-go="events">
-          <img src="${esc(liveEvents()[0].img || "images/hero-venue.png")}" alt="" />
+          <img src="${esc(eventImg(liveEvents()[0]))}" alt="" />
           <div class="body">
             <div class="when">${esc(tx(liveEvents()[0].when))}</div>
             <h3>${esc(tx(liveEvents()[0].title))}</h3>
@@ -771,7 +775,11 @@
     const statusLabel = { new: t("statusNew"), preparing: t("statusPreparing"), ready: t("statusReady") };
 
     const ordersTab = `
-          <h2 style="margin-top:4px">${t("liveOrders")}</h2>
+          <p class="sub" style="margin-bottom:12px">${t("kitchenEditorsNote")}</p>
+          <button class="btn green" style="margin-top:0" data-stafftab="menu">${t("editMenuBtn")}</button>
+          <button class="btn copper" data-stafftab="specials">${t("editSpecialBtn")}</button>
+          <button class="btn ghost" data-stafftab="deck">${t("editDeckBtn")}</button>
+          <h2>${t("liveOrders")}</h2>
           ${live.length ? live.map(o => {
             const mins = Math.max(0, Math.round((Date.now() - o.placedAt) / 60000));
             return `
@@ -817,11 +825,11 @@
                   <span class="src-tag ${state.photos[m.id] ? "own" : ""}">${state.photos[m.id] ? t("yourPhotoLabel") : t("aiLabel")}</span>
                 </div>
                 <div class="pbtns">
-                  <button class="pbtn" data-photo="${m.id}">${t("replacePhoto")}</button>
+                  <button class="pbtn" data-photo-cam="${m.id}">${t("takePhoto")}</button>
+                  <button class="pbtn" data-photo-gal="${m.id}">${t("fromGallery")}</button>
                   ${state.photos[m.id] ? `<button class="pbtn plain" data-photo-reset="${m.id}">${t("resetPhoto")}</button>` : ""}
                 </div>
               </div>`).join("")}
-            <input type="file" id="photo-file" accept="image/*" hidden />
           </div>
 
           <h2>${t("eightySix")}</h2>
@@ -840,9 +848,14 @@
     const nts = liveNotices();
     const specialsTab = `
           <h2 style="margin-top:4px">${t("specialsEditorTitle")}</h2>
-          <p class="sub" style="margin-bottom:10px">${t("specialsEditorNote")}</p>
+          <p class="sub" style="margin-bottom:10px">${t("specialEditorFocus")}</p>
           ${evs.length ? evs.map((e, i) => `
           <div class="card" data-ev="${i}" style="margin-bottom:10px">
+            <img src="${esc(eventImg(e))}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
+            <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-bottom:8px">
+              <button class="pbtn" data-ev-cam="${e.id}">${t("takePhoto")}</button>
+              <button class="pbtn" data-ev-gal="${e.id}">${t("fromGallery")}</button>
+            </div>
             <label class="fld">${t("fieldTitle")} ENG</label>
             <input type="text" data-f="title-en" value="${esc(e.title.en)}" />
             <label class="fld">${t("fieldTitle")} AFR</label>
@@ -878,6 +891,29 @@
           <button class="btn ghost" id="nt-add">${t("addNotice")}</button>
           <button class="btn ghost" id="specials-reset" style="margin-top:18px">&#8634; ${t("resetSection")}</button>`;
 
+    const deckIds = liveFeatured();
+    const deckTab = `
+          <h2 style="margin-top:4px">${t("deckEditorTitle")}</h2>
+          <p class="sub" style="margin-bottom:10px">${t("deckEditorNote")}</p>
+          ${deckIds.map((id, i) => {
+            const m = item(id);
+            if (!m) return "";
+            return `
+          <div class="card" style="margin-bottom:10px">
+            <img src="${imgSrc(m)}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
+            <label class="fld">${t("pickDish")}</label>
+            <select data-deck-pick="${i}">
+              ${MENU.map(opt => `<option value="${opt.id}" ${opt.id === id ? "selected" : ""}>${esc(tx(opt.name))} · ${rand(opt.price)}</option>`).join("")}
+            </select>
+            <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-top:10px">
+              <button class="pbtn" data-photo-cam="${id}">${t("takePhoto")}</button>
+              <button class="pbtn" data-photo-gal="${id}">${t("fromGallery")}</button>
+              <button class="pbtn plain" data-deck-del="${i}">${t("removeFromDeck")}</button>
+            </div>
+          </div>`;
+          }).join("")}
+          ${deckIds.length < 6 ? `<button class="btn ghost" id="deck-add">${t("addDeckItem")}</button>` : ""}`;
+
     app.innerHTML = `
       <div class="staff-bar">
         <button class="back" id="staff-back">&#8592; ${t("backToApp")}</button>
@@ -888,9 +924,12 @@
           <button class="cat-tab ${state.staffTab === "orders" ? "active" : ""}" data-stafftab="orders">&#128203; ${t("staffTabOrders")}</button>
           <button class="cat-tab ${state.staffTab === "menu" ? "active" : ""}" data-stafftab="menu">&#128247; ${t("staffTabMenu")}</button>
           <button class="cat-tab ${state.staffTab === "specials" ? "active" : ""}" data-stafftab="specials">&#128227; ${t("staffTabSpecials")}</button>
+          <button class="cat-tab ${state.staffTab === "deck" ? "active" : ""}" data-stafftab="deck">&#127869; ${t("staffTabDeck")}</button>
         </div>
         <div class="pad">
-          ${state.staffTab === "menu" ? menuTab : state.staffTab === "specials" ? specialsTab : ordersTab}
+          ${state.staffTab === "menu" ? menuTab : state.staffTab === "specials" ? specialsTab : state.staffTab === "deck" ? deckTab : ordersTab}
+          <input type="file" id="photo-cam" accept="image/*" capture="user" hidden />
+          <input type="file" id="photo-gal" accept="image/*" hidden />
         </div>
       </main>
     `;
@@ -1001,8 +1040,12 @@
       if (!confirm(t("resetSectionConfirm"))) return;
       state.events = null;
       state.notices = null;
+      state.featured = null;
+      state.eventPhotos = {};
       store.del("cp_events");
       store.del("cp_notices");
+      store.del("cp_featured");
+      store.del("cp_event_photos");
       toast(t("savedToast"));
       renderStaff();
     });
@@ -1019,24 +1062,34 @@
         renderStaff();
       })
     );
-    // Photo manager: replace or reset a dish photo. Only present on the menu tab.
-    const fileInput = document.getElementById("photo-file");
-    let pendingPhotoItem = null;
-    app.querySelectorAll("[data-photo]").forEach(b =>
-      b.addEventListener("click", () => {
-        pendingPhotoItem = b.dataset.photo;
-        fileInput.click();
-      })
-    );
-    if (fileInput) fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
-      if (!file || !pendingPhotoItem) return;
-      const targetId = pendingPhotoItem;
-      pendingPhotoItem = null;
+    // Photos: Take photo (front camera) or From gallery, for dishes and specials.
+    const camInput = document.getElementById("photo-cam");
+    const galInput = document.getElementById("photo-gal");
+    let pendingPhoto = null;
+
+    function saveDataUrl(dataUrl) {
+      if (!pendingPhoto) return;
+      try {
+        if (pendingPhoto.type === "event") {
+          state.eventPhotos[pendingPhoto.id] = dataUrl;
+          store.set("cp_event_photos", state.eventPhotos);
+        } else {
+          state.photos[pendingPhoto.id] = dataUrl;
+          store.set("cp_photos", state.photos);
+        }
+        toast(t("photoUpdated"));
+      } catch (e) {
+        toast(state.lang === "af" ? "Die foto is te groot vir die demo" : "That photo is too big for the demo");
+      }
+      pendingPhoto = null;
+      renderStaff();
+    }
+
+    function readPhotoFile(file) {
+      if (!file || !pendingPhoto) return;
       const url = URL.createObjectURL(file);
       const img = new Image();
       img.onload = () => {
-        // Downscale so it fits comfortably in this demo's local storage.
         const max = 900;
         const scale = Math.min(1, max / Math.max(img.width, img.height));
         const c = document.createElement("canvas");
@@ -1044,19 +1097,38 @@
         c.height = Math.round(img.height * scale);
         c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
         URL.revokeObjectURL(url);
-        try {
-          state.photos[targetId] = c.toDataURL("image/jpeg", 0.82);
-          store.set("cp_photos", state.photos);
-          toast(t("photoUpdated"));
-        } catch (e) {
-          toast(state.lang === "af" ? "Die foto is te groot vir die demo" : "That photo is too big for the demo");
-        }
-        renderStaff();
+        saveDataUrl(c.toDataURL("image/jpeg", 0.82));
       };
-      img.onerror = () => { URL.revokeObjectURL(url); };
+      img.onerror = () => { URL.revokeObjectURL(url); pendingPhoto = null; };
       img.src = url;
-      fileInput.value = "";
-    });
+    }
+
+    app.querySelectorAll("[data-photo-cam]").forEach(b =>
+      b.addEventListener("click", () => {
+        pendingPhoto = { type: "item", id: b.dataset.photoCam };
+        if (camInput) { camInput.value = ""; camInput.click(); }
+      })
+    );
+    app.querySelectorAll("[data-photo-gal]").forEach(b =>
+      b.addEventListener("click", () => {
+        pendingPhoto = { type: "item", id: b.dataset.photoGal };
+        if (galInput) { galInput.value = ""; galInput.click(); }
+      })
+    );
+    app.querySelectorAll("[data-ev-cam]").forEach(b =>
+      b.addEventListener("click", () => {
+        pendingPhoto = { type: "event", id: b.dataset.evCam };
+        if (camInput) { camInput.value = ""; camInput.click(); }
+      })
+    );
+    app.querySelectorAll("[data-ev-gal]").forEach(b =>
+      b.addEventListener("click", () => {
+        pendingPhoto = { type: "event", id: b.dataset.evGal };
+        if (galInput) { galInput.value = ""; galInput.click(); }
+      })
+    );
+    if (camInput) camInput.addEventListener("change", () => readPhotoFile(camInput.files[0]));
+    if (galInput) galInput.addEventListener("change", () => readPhotoFile(galInput.files[0]));
     app.querySelectorAll("[data-photo-reset]").forEach(b =>
       b.addEventListener("click", () => {
         delete state.photos[b.dataset.photoReset];
@@ -1065,6 +1137,35 @@
         renderStaff();
       })
     );
+    app.querySelectorAll("[data-deck-pick]").forEach(sel =>
+      sel.addEventListener("change", () => {
+        const list = liveFeatured().slice();
+        list[Number(sel.dataset.deckPick)] = sel.value;
+        state.featured = list;
+        store.set("cp_featured", list);
+        renderStaff();
+      })
+    );
+    app.querySelectorAll("[data-deck-del]").forEach(b =>
+      b.addEventListener("click", () => {
+        const list = liveFeatured().slice();
+        list.splice(Number(b.dataset.deckDel), 1);
+        state.featured = list;
+        store.set("cp_featured", list);
+        renderStaff();
+      })
+    );
+    const deckAdd = document.getElementById("deck-add");
+    if (deckAdd) deckAdd.addEventListener("click", () => {
+      const list = liveFeatured().slice();
+      const used = new Set(list);
+      const next = MENU.find(m => !used.has(m.id));
+      if (!next) return;
+      list.push(next.id);
+      state.featured = list;
+      store.set("cp_featured", list);
+      renderStaff();
+    });
     app.querySelectorAll("[data-86]").forEach(b =>
       b.addEventListener("click", () => {
         const id = b.dataset["86"] || b.getAttribute("data-86");

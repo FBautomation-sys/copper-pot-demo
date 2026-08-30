@@ -501,7 +501,29 @@ const STRINGS = {
   staffTitle: { en: "Kitchen board", af: "Kombuisbord" },
   staffTabOrders: { en: "Orders", af: "Bestellings" },
   staffTabMenu: { en: "Edit menu", af: "Wysig spyskaart" },
-  staffTabSpecials: { en: "Edit specials", af: "Wysig spesiale" },
+  staffTabSpecials: { en: "Edit special", af: "Wysig spesiale" },
+  staffTabDeck: { en: "On the pot", af: "In die pot" },
+  kitchenEditorsNote: {
+    en: "Three editors. Menu plates, today's special, and the plates on the pot.",
+    af: "Drie redigeerders. Spyskaartborde, vandag se spesiale, en die borde in die pot."
+  },
+  editMenuBtn: { en: "Edit menu", af: "Wysig spyskaart" },
+  editSpecialBtn: { en: "Edit today's special", af: "Wysig vandag se spesiale" },
+  editDeckBtn: { en: "Edit on the pot today", af: "Wysig in die pot vandag" },
+  takePhoto: { en: "Take photo", af: "Neem foto" },
+  fromGallery: { en: "From gallery", af: "Uit gallery" },
+  deckEditorTitle: { en: "On the pot today", af: "In die pot vandag" },
+  deckEditorNote: {
+    en: "These five cards scroll on the home screen. Change the dish, take a photo with the camera, or pick one from the gallery.",
+    af: "Hierdie vyf kaarte rol op die tuisskerm. Verander die gereg, neem 'n foto met die kamera, of kies een uit die gallery."
+  },
+  specialEditorFocus: {
+    en: "This is the big photo card under On the pot today. Change the words and the photo and it updates the home screen.",
+    af: "Dit is die groot fotokaart onder In die pot vandag. Verander die woorde en die foto en die tuisskerm dateer op."
+  },
+  pickDish: { en: "Dish on this card", af: "Gereg op hierdie kaart" },
+  addDeckItem: { en: "+ Add a dish to the rail", af: "+ Voeg 'n gereg by die ry" },
+  removeFromDeck: { en: "Remove from home", af: "Haal van tuisskerm af" },
   specialsEditorTitle: { en: "Events and specials", af: "Geleenthede en spesiale aanbiedinge" },
   specialsEditorNote: {
     en: "What you type here shows on the home screen and the events page right away. Fill in both languages, if you leave AFR empty we use the ENG text there too.",
@@ -563,8 +585,8 @@ const STRINGS = {
   available: { en: "Available", af: "Beskikbaar" },
   photoManager: { en: "Menu photos", af: "Spyskaartfoto's" },
   photoManagerNote: {
-    en: "This is where the restaurant loads its own dish photos. Tap Replace photo, pick a picture from your phone, and the menu updates right away. Reset brings back the original.",
-    af: "Hier laai die restaurant sy eie geregfoto's. Tik Vervang foto, kies 'n prent van jou foon, en die spyskaart dateer dadelik op. Herstel bring die oorspronklike terug."
+    en: "This is where the restaurant loads its own dish photos. Take photo opens the camera. From gallery picks a picture already on the phone. The menu updates right away. Reset brings back the original.",
+    af: "Hier laai die restaurant sy eie geregfoto's. Neem foto maak die kamera oop. Uit gallery kies 'n prent wat al op die foon is. Die spyskaart dateer dadelik op. Herstel bring die oorspronklike terug."
   },
   replacePhoto: { en: "Replace photo", af: "Vervang foto" },
   resetPhoto: { en: "Reset", af: "Herstel" },
