@@ -70,7 +70,10 @@
     store.set("cp_kitchen", state.kitchen);
   }
   if (!state.dineIn || typeof state.dineIn !== "object") {
-    state.dineIn = { mode: "collection", table: "", split: false, name: "" };
+    state.dineIn = { mode: "browse", table: "", split: false, name: "" };
+  } else {
+    state.dineIn.mode = "browse";
+    store.set("cp_dinein", state.dineIn);
   }
 
   // ---------- helpers ----------
@@ -215,6 +218,10 @@
     state.dineIn = { mode: "collection", table: "", split: false, name: "" };
     saveDineIn();
   }
+  function setBrowseMode() {
+    state.dineIn.mode = "browse";
+    saveDineIn();
+  }
 
   function addPoints(spendRand, withStamp) {
     if (!state.member) return;
@@ -328,7 +335,10 @@
     );
     document.getElementById("btn-cart").addEventListener("click", () => go("cart"));
     app.querySelectorAll("#bottom-nav button").forEach(b =>
-      b.addEventListener("click", () => go(b.dataset.screen))
+      b.addEventListener("click", () => {
+        if (b.dataset.screen === "menu" && !isTableOrder()) setBrowseMode();
+        go(b.dataset.screen);
+      })
     );
   }
 
@@ -368,7 +378,7 @@
         <div class="status-badge ${st.open ? "" : "closed"}"><span class="dot"></span>${st.label}</div>
       </div>
       <div class="cta-grid">
-        <button class="cta secondary" data-go="menu"><span class="ico">&#128214;</span>${t("ctaMenu")}</button>
+        <button class="cta secondary" id="cta-menu"><span class="ico">&#128214;</span>${t("ctaMenu")}</button>
         <button class="cta primary" id="cta-collect"><span class="ico">&#128230;</span>${t("ctaOrder")}</button>
         <button class="cta table" data-go="table"><span class="ico">&#127869;</span>${t("ctaTable")}</button>
         <div class="cta-stack">
@@ -403,6 +413,11 @@
       </div>
     `;
     wireGo(main);
+    const menuBtn = document.getElementById("cta-menu");
+    if (menuBtn) menuBtn.addEventListener("click", () => {
+      setBrowseMode();
+      go("menu");
+    });
     const collectBtn = document.getElementById("cta-collect");
     if (collectBtn) collectBtn.addEventListener("click", () => {
       setCollectionMode();
