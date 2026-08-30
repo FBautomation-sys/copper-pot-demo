@@ -151,8 +151,53 @@
 
   function linePrice(line) {
     const it = item(line.itemId);
-    const extrasSum = line.extras.reduce((s, k) => s + EXTRAS[k].price, 0);
-    return (it.price + extrasSum) * line.qty;
+    if (!it) return 0;
+    const extrasSum = (line.extras || []).reduce((s, k) => s + ((EXTRAS[k] && EXTRAS[k].price) || 0), 0);
+    return (it.price + extrasSum) * (line.qty || 0);
+  }
+  function cloneLines(lines) {
+    return (lines || []).map(l => ({
+      itemId: l.itemId,
+      qty: l.qty,
+      extras: (l.extras || []).slice(),
+      notes: l.notes || ""
+    }));
+  }
+  function lineLabel(l) {
+    const it = item(l.itemId);
+    const name = it ? tx(it.name) : (l.itemId || "?");
+    const extras = (l.extras || []).map(k => (EXTRAS[k] ? tx(EXTRAS[k].name) : "")).filter(Boolean);
+    let s = (l.qty || 1) + " x " + name;
+    if (extras.length) s += " (" + extras.join(", ") + ")";
+    if (l.notes) s += " · " + l.notes;
+    return s;
+  }
+  function linesListHtml(lines) {
+    return `<ul class="order-lines">${(lines || []).map(l => `<li>${esc(lineLabel(l))} <span class="pr">${rand(linePrice(l))}</span></li>`).join("")}</ul>`;
+  }
+  function orderTotal(o) {
+    return (o.lines || []).reduce((s, l) => s + linePrice(l), 0);
+  }
+  function peopleAtTable(list) {
+    const people = [];
+    const map = {};
+    (list || []).forEach(o => {
+      const pk = o.split ? (String(o.customer || "").trim().toLowerCase() || "__split__") : "__one__";
+      if (!map[pk]) {
+        map[pk] = {
+          key: pk,
+          name: o.split ? (o.customer || t("splitLabel")) : t("oneBillLabel"),
+          orders: [],
+          total: 0,
+          lines: []
+        };
+        people.push(map[pk]);
+      }
+      map[pk].orders.push(o);
+      map[pk].total += orderTotal(o);
+      (o.lines || []).forEach(l => map[pk].lines.push(l));
+    });
+    return people;
   }
   const cartTotal = () => state.cart.reduce((s, l) => s + linePrice(l), 0);
   const cartCount = () => state.cart.reduce((s, l) => s + l.qty, 0);
@@ -645,6 +690,7 @@
       toast(isTableOrder() && state.dineIn.split && !String(state.dineIn.name || "").trim() ? t("tableNeedName") : t("tableNeedNumber"));
       return;
     }
+    const lines = cloneLines(state.cart);
     const msg = orderMessage();
     const total = cartTotal();
     const orderId = "CP-" + (1043 + state.pastOrders.length);
@@ -659,7 +705,7 @@
       id: orderId,
       when: new Date().toISOString(),
       total,
-      lines: state.cart
+      lines
     });
     store.set("cp_orders", state.pastOrders);
 
@@ -670,7 +716,7 @@
       phone: state.member ? state.member.phone : "",
       placedAt: Date.now(),
       status: "new",
-      lines: state.cart,
+      lines,
       table: tableNo,
       split: !!(isTableOrder() && state.dineIn.split),
       kind: isTableOrder() ? "table" : "collection"
@@ -954,7 +1000,6 @@
           <button class="btn ghost" data-stafftab="deck">${t("editDeckBtn")}</button>
           <h2>${t("openTables")}</h2>
           ${(() => {
-            const orderTotal = o => (o.lines || []).reduce((s, l) => s + linePrice(l), 0);
             const openByTable = {};
             state.kitchen.filter(o => o.table && o.status !== "collected").forEach(o => {
               const key = String(o.table).trim();
@@ -965,27 +1010,28 @@
             if (!tableNos.length) return `<div class="card"><p class="sub">${t("noOpenTables")}</p></div>`;
             return tableNos.map(tno => {
               const list = openByTable[tno];
-              const people = {};
-              list.forEach(o => {
-                const pk = o.split ? (String(o.customer || "").trim().toLowerCase() || "__split__") : "__one__";
-                if (!people[pk]) people[pk] = { name: o.split ? (o.customer || t("splitLabel")) : t("oneBillLabel"), total: 0 };
-                people[pk].total += orderTotal(o);
-              });
-              const rows = Object.keys(people).map(pk => {
-                const p = people[pk];
-                return `<div class="table-person"><span>${esc(p.name)}</span><span>${rand(p.total)}</span></div>`;
-              }).join("");
-              const grand = list.reduce((s, o) => s + orderTotal(o), 0);
+              const people = peopleAtTable(list);
               const splitish = list.some(o => o.split);
+              const grand = list.reduce((s, o) => s + orderTotal(o), 0);
+              const personBlocks = people.map(p => {
+                const ids = p.orders.map(o => o.id).join(",");
+                return `
+                  <div class="person-block">
+                    <div class="ph"><span>${esc(p.name)}</span><span>${rand(p.total)}</span></div>
+                    ${linesListHtml(p.lines)}
+                    <button class="btn danger" data-del-ids="${esc(ids)}">${t("deleteTheseOrders")}</button>
+                  </div>`;
+              }).join("");
               return `
                 <div class="card" style="margin-bottom:10px">
                   <div class="oc-head">
                     <span class="oc-id">${esc(t("tableTicket").replace("{n}", tno))}</span>
                     <span class="src-tag ${splitish ? "own" : ""}">${splitish ? t("splitLabel") : t("oneBillLabel")}</span>
                   </div>
-                  ${rows}
-                  <div class="total-row" style="margin:8px 0 0"><span>${t("total")}</span><span>${rand(grand)}</span></div>
+                  ${personBlocks}
+                  <div class="total-row" style="margin:10px 0 0"><span>${t("total")}</span><span>${rand(grand)}</span></div>
                   <button class="btn green" data-cashup="${esc(tno)}">${t("cashUpTable")}</button>
+                  <button class="btn danger" data-del-table="${esc(tno)}">${t("deleteThisTable")}</button>
                 </div>`;
             }).join("");
           })()}
@@ -1001,15 +1047,7 @@
                 <span class="oc-status">${statusLabel[o.status]}</span>
               </div>
               <div class="oc-meta">${mins} min ${state.lang === "af" ? "gelede" : "ago"}${o.phone ? " · " + esc(o.phone) : ""}</div>
-              <ul>
-                ${o.lines.map(l => {
-                  const it = item(l.itemId);
-                  let s = `${l.qty} x ${esc(tx(it.name))}`;
-                  if (l.extras.length) s += " (" + l.extras.map(k => esc(tx(EXTRAS[k].name))).join(", ") + ")";
-                  if (l.notes) s += ` <span class="oc-note">${esc(l.notes)}</span>`;
-                  return `<li>${s}</li>`;
-                }).join("")}
-              </ul>
+              ${linesListHtml(o.lines)}
               ${o.status === "new" ? `<button class="btn copper" data-adv="${o.id}">${t("markPreparing")}</button>` : ""}
               ${o.status === "preparing" ? `<button class="btn green" data-adv="${o.id}">${t("markReady")}</button>` : ""}
               ${o.status === "ready" ? `<button class="btn ghost" data-adv="${o.id}">${t("markCollected")} &#10003;</button>` : ""}
@@ -1372,13 +1410,39 @@
     );
     app.querySelectorAll("[data-cashup]").forEach(b =>
       b.addEventListener("click", () => {
-        if (!confirm(t("cashUpConfirm"))) return;
         const tno = String(b.dataset.cashup);
+        const list = state.kitchen.filter(o => String(o.table) === tno && o.status !== "collected");
+        const people = peopleAtTable(list);
+        const detail = people.map(p => {
+          const items = p.lines.map(l => lineLabel(l)).join(", ");
+          return p.name + ": " + rand(p.total) + (items ? " · " + items : "");
+        }).join("\n");
+        if (!confirm(t("cashUpConfirm") + "\n\n" + detail)) return;
         state.kitchen.forEach(o => {
           if (String(o.table) === tno && o.status !== "collected") o.status = "collected";
         });
         store.set("cp_kitchen", state.kitchen);
         toast(t("savedToast"));
+        renderStaff();
+      })
+    );
+    app.querySelectorAll("[data-del-ids]").forEach(b =>
+      b.addEventListener("click", () => {
+        if (!confirm(t("deleteOrderConfirm"))) return;
+        const ids = new Set(String(b.dataset.delIds).split(",").filter(Boolean));
+        state.kitchen = state.kitchen.filter(k => !ids.has(k.id));
+        store.set("cp_kitchen", state.kitchen);
+        toast(t("deletedToast"));
+        renderStaff();
+      })
+    );
+    app.querySelectorAll("[data-del-table]").forEach(b =>
+      b.addEventListener("click", () => {
+        if (!confirm(t("deleteTableConfirm"))) return;
+        const tno = String(b.dataset.delTable);
+        state.kitchen = state.kitchen.filter(k => String(k.table || "") !== tno);
+        store.set("cp_kitchen", state.kitchen);
+        toast(t("deletedToast"));
         renderStaff();
       })
     );

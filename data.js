@@ -662,6 +662,12 @@ const STRINGS = {
   markReady: { en: "Mark ready", af: "Merk gereed" },
   markCollected: { en: "Collected", af: "Afgehaal" },
   deleteOrder: { en: "Delete order", af: "Vee bestelling uit" },
+  deleteTheseOrders: { en: "Delete these orders", af: "Vee hierdie bestellings uit" },
+  deleteThisTable: { en: "Delete this table", af: "Vee hierdie tafel uit" },
+  deleteTableConfirm: {
+    en: "Delete every order for this table from the kitchen board?",
+    af: "Vee elke bestelling vir hierdie tafel van die kombuisbord af?"
+  },
   deleteOrderConfirm: {
     en: "Delete this order from the kitchen board?",
     af: "Vee hierdie bestelling van die kombuisbord af?"
