@@ -14,7 +14,7 @@ const RESTAURANT = {
   },
   address: "12 Kerk Street, Stellenbosch, 7600",
   phone: "021 555 0134",
-  whatsapp: "27825550134", // demo number, replace with the real one
+  whatsapp: "27658793566", // demo practice number, wa.me without the +
   email: "hello@copperpot.co.za",
   mapsUrl: "https://www.google.com/maps/search/?api=1&query=12+Kerk+Street+Stellenbosch+7600",
   established: 2021,
@@ -405,7 +405,6 @@ const STRINGS = {
   seeAllEvents: { en: "See all specials", af: "Sien alle spesiale aanbiedinge" },
 
   whatsappCart: { en: "WhatsApp cart", af: "WhatsApp mandjie" },
-  cartBtnShort: { en: "Cart", af: "Mandjie" },
   addToCart: { en: "Add to WhatsApp cart", af: "Voeg by WhatsApp mandjie" },
   cartEmptyTitle: { en: "Nothing in your basket yet", af: "Nog niks in jou mandjie nie" },
   cartEmptyBody: {

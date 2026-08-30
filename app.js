@@ -196,7 +196,7 @@
             <button data-lang="en" class="${state.lang === "en" ? "active" : ""}">ENG</button>
           </div>
           <button class="cart-btn" id="btn-cart" aria-label="${t("whatsappCart")}">
-            ${waIcon}<span>${t("cartBtnShort")}</span>
+            ${waIcon}<span>${t("whatsappCart")}</span>
             ${cartCount() ? `<span class="badge">${cartCount()}</span>` : ""}
           </button>
         </div>
