@@ -25,7 +25,6 @@
     member: store.get("cp_member", null),    // {name, phone, points, stamps, since}
     pastOrders: store.get("cp_orders", []),  // [{id, when, lines, total}]
     kitchen: store.get("cp_kitchen", null),  // [{id, customer, phone, placedAt, status, lines}]
-    eightySix: store.get("cp_86", []),       // [itemId]
     photos: store.get("cp_photos", {}),      // {itemId: dataUrl} owner-uploaded photo overrides
     eventPhotos: store.get("cp_event_photos", {}), // {eventId: dataUrl}
     featured: store.get("cp_featured", null), // [itemId] for home rail, null = FEATURED seed
@@ -258,7 +257,7 @@
         <h2 style="margin-top:8px">${t("todayAtCopperPot")}</h2>
       </div>
       <div class="deck-rail">
-        ${liveFeatured().map(id => item(id)).filter(m => m && !state.eightySix.includes(m.id)).map(m => `
+        ${liveFeatured().map(id => item(id)).filter(Boolean).map(m => `
           <button class="deck-card" data-item="${m.id}">
             <img src="${imgSrc(m)}" alt="${esc(tx(m.name))}" />
             <div class="info">
@@ -301,20 +300,17 @@
       </div>
       ${tx(cat.note) ? `<div class="cat-note">${esc(tx(cat.note))}</div>` : ""}
       <div class="menu-list">
-        ${items.map(m => {
-          const out = state.eightySix.includes(m.id);
-          return `
-          <button class="menu-item ${out ? "soldout" : ""}" data-item="${m.id}" ${out ? "disabled" : ""}>
+        ${items.map(m => `
+          <button class="menu-item" data-item="${m.id}">
             <img src="${imgSrc(m)}" alt="${esc(tx(m.name))}" loading="lazy" />
             <div class="info">
               <div class="name">${esc(tx(m.name))}</div>
               <div class="desc">${esc(tx(m.desc))}</div>
               <div class="row">
                 <span class="price">${rand(m.price)}</span>
-                ${out ? `<span class="tag86">${t("soldOut")}</span>` : ""}
               </div>
             </div>
-          </button>`;
+          </button>`).join("")}
         }).join("")}
       </div>
     `;
@@ -830,18 +826,6 @@
                   ${state.photos[m.id] ? `<button class="pbtn plain" data-photo-reset="${m.id}">${t("resetPhoto")}</button>` : ""}
                 </div>
               </div>`).join("")}
-          </div>
-
-          <h2>${t("eightySix")}</h2>
-          <div class="card">
-            ${MENU.map(m => {
-              const out = state.eightySix.includes(m.id);
-              return `
-              <div class="eight6-row">
-                <span class="nm">${esc(tx(m.name))}</span>
-                <button class="switch ${out ? "off" : "on"}" data-86="${m.id}">${out ? t("soldOut") : t("available")}</button>
-              </div>`;
-            }).join("")}
           </div>`;
 
     const evs = liveEvents();
@@ -1166,15 +1150,6 @@
       store.set("cp_featured", list);
       renderStaff();
     });
-    app.querySelectorAll("[data-86]").forEach(b =>
-      b.addEventListener("click", () => {
-        const id = b.dataset["86"] || b.getAttribute("data-86");
-        const i = state.eightySix.indexOf(id);
-        i >= 0 ? state.eightySix.splice(i, 1) : state.eightySix.push(id);
-        store.set("cp_86", state.eightySix);
-        renderStaff();
-      })
-    );
     const diAdd = document.getElementById("di-add");
     if (diAdd) diAdd.addEventListener("click", () => {
       const phone = document.getElementById("di-phone").value.trim();
