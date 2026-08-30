@@ -1013,6 +1013,7 @@
               ${o.status === "new" ? `<button class="btn copper" data-adv="${o.id}">${t("markPreparing")}</button>` : ""}
               ${o.status === "preparing" ? `<button class="btn green" data-adv="${o.id}">${t("markReady")}</button>` : ""}
               ${o.status === "ready" ? `<button class="btn ghost" data-adv="${o.id}">${t("markCollected")} &#10003;</button>` : ""}
+              <button class="btn danger" data-del-order="${o.id}">${t("deleteOrder")}</button>
             </div>`;
           }).join("") : `<div class="card"><p class="sub">${t("noLiveOrders")}</p></div>`}
 
@@ -1357,6 +1358,15 @@
         const nextStatus = { new: "preparing", preparing: "ready", ready: "collected" };
         o.status = nextStatus[o.status];
         store.set("cp_kitchen", state.kitchen);
+        renderStaff();
+      })
+    );
+    app.querySelectorAll("[data-del-order]").forEach(b =>
+      b.addEventListener("click", () => {
+        if (!confirm(t("deleteOrderConfirm"))) return;
+        state.kitchen = state.kitchen.filter(k => k.id !== b.dataset.delOrder);
+        store.set("cp_kitchen", state.kitchen);
+        toast(t("deletedToast"));
         renderStaff();
       })
     );

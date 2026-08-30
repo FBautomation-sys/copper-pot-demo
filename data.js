@@ -661,6 +661,11 @@ const STRINGS = {
   markPreparing: { en: "Start preparing", af: "Begin voorberei" },
   markReady: { en: "Mark ready", af: "Merk gereed" },
   markCollected: { en: "Collected", af: "Afgehaal" },
+  deleteOrder: { en: "Delete order", af: "Vee bestelling uit" },
+  deleteOrderConfirm: {
+    en: "Delete this order from the kitchen board?",
+    af: "Vee hierdie bestelling van die kombuisbord af?"
+  },
   noLiveOrders: {
     en: "No live orders right now. The board updates as WhatsApp orders come in.",
     af: "Geen lewendige bestellings op die oomblik nie. Die bord dateer op soos WhatsApp bestellings inkom."
