@@ -322,7 +322,6 @@
               </div>
             </div>
           </button>`).join("")}
-        }).join("")}
       </div>
     `;
     main.querySelectorAll(".cat-tab").forEach(b =>
