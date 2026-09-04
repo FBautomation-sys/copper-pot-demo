@@ -920,3 +920,135 @@ label.fld { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6p
   pointer-events: none;
 }
 .toast.show { opacity: 1; }
+
+/* Tablet, iPad, notepad and desktop: fill the screen like a website.
+   Phones keep the 520px mobile layout above this line. */
+@media (min-width: 768px) {
+  html, body {
+    width: 100%;
+  }
+  #app {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+  }
+
+  .topbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 32px;
+  }
+  .topbar .brand span { font-size: 22px; }
+  .topbar-actions {
+    justify-content: flex-end;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  .hero-wrap img.hero { height: 320px; }
+  .hero-logo {
+    width: 110px;
+    height: 110px;
+    margin-top: -55px;
+  }
+  .home-head h1 { font-size: 34px; }
+  .home-head .tagline { font-size: 17px; }
+
+  .home-head,
+  .cta-grid,
+  .pad,
+  .cat-tabs,
+  .cat-note,
+  .menu-list,
+  .deck-rail,
+  .table-banner {
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
+  .cta-grid {
+    gap: 16px;
+    padding: 24px 32px 8px;
+  }
+  .cta {
+    min-height: 110px;
+    font-size: 18px;
+    padding: 18px;
+  }
+  .cta-stack .cta {
+    min-height: 51px;
+    font-size: 16px;
+  }
+
+  .deck-rail {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    overflow: visible;
+    padding: 8px 32px 24px;
+    gap: 16px;
+  }
+  .deck-card { flex: none; width: auto; }
+  .deck-card img { height: 150px; }
+
+  .pad { padding: 20px 32px; }
+  .cat-tabs { padding: 16px 32px 10px; }
+  .cat-note { padding-left: 32px; padding-right: 32px; }
+  .table-banner { margin: 8px auto 0; padding: 10px 16px; }
+
+  .menu-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 16px 32px 24px;
+    gap: 16px;
+  }
+  .menu-item img {
+    width: 128px;
+    height: 128px;
+  }
+
+  .special-card img { height: 280px; }
+
+  .notice-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .notice-list .card + .card { margin-top: 0; }
+
+  .staff-bar { padding: 14px 32px; }
+
+  .bottom-nav {
+    left: 0;
+    transform: none;
+    max-width: none;
+    width: 100%;
+  }
+
+  .sheet { max-width: 640px; }
+
+  .toast { max-width: 480px; }
+}
+
+@media (min-width: 1024px) {
+  .hero-wrap img.hero { height: 400px; }
+  .home-head,
+  .cta-grid,
+  .pad,
+  .cat-tabs,
+  .cat-note,
+  .menu-list,
+  .deck-rail,
+  .table-banner {
+    max-width: 1200px;
+  }
+  .cta-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .home-head h1 { font-size: 40px; }
+}
+
+@media (min-width: 1400px) {
+  .menu-list { grid-template-columns: 1fr 1fr 1fr; }
+}
