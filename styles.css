@@ -19,6 +19,7 @@
 
 html, body {
   height: 100%;
+  width: 100%;
   background: var(--cream);
   color: var(--ink);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -28,8 +29,9 @@ html, body {
 }
 
 #app {
-  max-width: 520px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   min-height: 100dvh;
   min-width: 0;
   display: flex;
@@ -451,7 +453,7 @@ h2 { font-size: 19px; margin: 18px 0 10px; }
   transform: translateX(-50%);
   bottom: 0;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   max-height: 88dvh;
   overflow-y: auto;
   background: var(--cream);
@@ -873,10 +875,11 @@ label.fld { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6p
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  transform: none;
   width: 100%;
-  max-width: 520px;
+  max-width: none;
   background: #fff;
   border-top: 1px solid var(--line);
   display: flex;
@@ -921,16 +924,10 @@ label.fld { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6p
 }
 .toast.show { opacity: 1; }
 
-/* Tablet, iPad, notepad and desktop: fill the screen like a website.
-   Phones keep the 520px mobile layout above this line. */
-@media (min-width: 768px) {
+/* Wider screens: website layout. The shell is already full width. */
+@media (min-width: 600px) {
   html, body {
     width: 100%;
-  }
-  #app {
-    max-width: none;
-    width: 100%;
-    margin: 0;
   }
 
   .topbar {
@@ -955,20 +952,6 @@ label.fld { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6p
   }
   .home-head h1 { font-size: 34px; }
   .home-head .tagline { font-size: 17px; }
-
-  .home-head,
-  .cta-grid,
-  .pad,
-  .cat-tabs,
-  .cat-note,
-  .menu-list,
-  .deck-rail,
-  .table-banner {
-    max-width: 1120px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
-  }
 
   .cta-grid {
     gap: 16px;
@@ -1021,30 +1004,13 @@ label.fld { display: block; font-weight: 600; font-size: 14px; margin: 12px 0 6p
 
   .staff-bar { padding: 14px 32px; }
 
-  .bottom-nav {
-    left: 0;
-    transform: none;
-    max-width: none;
-    width: 100%;
-  }
-
-  .sheet { max-width: 640px; }
+  .sheet { max-width: 720px; }
 
   .toast { max-width: 480px; }
 }
 
 @media (min-width: 1024px) {
   .hero-wrap img.hero { height: 400px; }
-  .home-head,
-  .cta-grid,
-  .pad,
-  .cat-tabs,
-  .cat-note,
-  .menu-list,
-  .deck-rail,
-  .table-banner {
-    max-width: 1200px;
-  }
   .cta-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .home-head h1 { font-size: 40px; }
 }
