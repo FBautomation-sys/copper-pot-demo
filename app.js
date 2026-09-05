@@ -655,8 +655,8 @@
           </div>
         </button>
         <button class="btn ghost" data-go="events">${t("seeAllEvents")}</button>` : ""}
+        <p class="home-credit">${t("builtByBefore")}<a href="https://aioptimization.site" target="_blank" rel="noopener">aioptimization.site</a></p>
       </div>
-      <p class="home-credit">${t("builtByBefore")}<a href="https://aioptimization.site" target="_blank" rel="noopener">aioptimization.site</a></p>
     `;
     wireGo(main);
     const menuBtn = document.getElementById("cta-menu");
