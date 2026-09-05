@@ -590,6 +590,7 @@ const STRINGS = {
     af: "Hierdie app hou jou naam, nommer, mandjie, punte en bestelgeskiedenis op jou foon sodat afhaal en die Copper Klub werk. Ons verkoop nie jou besonderhede nie. Jy kan alles uitvee onder Rekening."
   },
   demoBadge: { en: "Demo app with sample data", af: "Demo app met voorbeelddata" },
+  builtByBefore: { en: "This app was built by ", af: "Hierdie app is gebou deur " },
 
   staffTitle: { en: "Kitchen board", af: "Kombuisbord" },
   staffTabOrders: { en: "Orders", af: "Bestellings" },
