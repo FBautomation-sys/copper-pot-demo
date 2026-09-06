@@ -1222,6 +1222,21 @@
   }
 
   // ---------- staff / kitchen ----------
+  const ICO_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>';
+  const ICO_GAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+
+  function staffPhotoBox(src, isAi, variant, camAttr, galAttr) {
+    return `
+      <div class="edit-photo ${variant === "hero" ? "hero" : "thumb"}">
+        <img src="${esc(src)}" alt="" />
+        ${isAi ? `<span class="ai-on-photo">${t("aiLabel")}</span>` : ""}
+        <div class="edit-photo-acts">
+          <button type="button" class="ph-act" ${camAttr} aria-label="${esc(t("takePhoto"))}">${ICO_CAM}</button>
+          <button type="button" class="ph-act" ${galAttr} aria-label="${esc(t("fromGallery"))}">${ICO_GAL}</button>
+        </div>
+      </div>`;
+  }
+
   function renderStaff() {
     const app = document.getElementById("app");
     if (!state.staffAuthed) {
@@ -1331,12 +1346,8 @@
     const menuTab = editDish ? `
           <h2 style="margin-top:4px">${esc(tx(editDish.name))}</h2>
           <div class="card">
-            <img src="${imgSrc(editDish)}" alt="" style="width:100%;height:160px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
-            <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-bottom:8px">
-              <button class="pbtn" data-photo-cam="${editDish.id}">${t("takePhoto")}</button>
-              <button class="pbtn" data-photo-gal="${editDish.id}">${t("fromGallery")}</button>
-              ${state.photos[editDish.id] ? `<button class="pbtn plain" data-photo-reset="${editDish.id}">${t("resetPhoto")}</button>` : ""}
-            </div>
+            ${staffPhotoBox(imgSrc(editDish), !!(editDish.photoAi && !state.photos[editDish.id]), "hero", `data-photo-cam="${editDish.id}"`, `data-photo-gal="${editDish.id}"`)}
+            ${state.photos[editDish.id] ? `<button class="pbtn plain" style="margin:10px 0 8px" data-photo-reset="${editDish.id}">${t("resetPhoto")}</button>` : ""}
             <label class="fld">${t("fieldName")} ENG</label>
             <input type="text" data-f="name-en" value="${esc(editDish.name.en)}" />
             <label class="fld">${t("fieldName")} AFR</label>
@@ -1349,19 +1360,19 @@
             ${state.menuEdits[editDish.id] ? `<button class="btn ghost" id="dish-reset-copy">${t("resetDishCopy")}</button>` : ""}
           </div>` : `
           <h2 style="margin-top:4px">${t("photoManager")}</h2>
-          <div class="card">
-            <p class="sub" style="margin-bottom:6px">${t("photoManagerNote")}</p>
+          <p class="sub" style="margin-bottom:10px">${t("photoManagerNote")}</p>
+          <div class="edit-dish-list">
             ${MENU.map(m => {
               const it = item(m.id);
+              const own = !!state.photos[m.id];
               return `
-              <button type="button" class="photo-row tap" data-edit-dish="${m.id}">
-                <img src="${imgSrc(it)}" alt="" />
-                <div class="mid">
+              <div class="edit-dish">
+                ${staffPhotoBox(imgSrc(it), !!(it.photoAi && !own), "thumb", `data-photo-cam="${m.id}"`, `data-photo-gal="${m.id}"`)}
+                <button type="button" class="edit-dish-copy" data-edit-dish="${m.id}">
                   <div class="nm">${esc(tx(it.name))}</div>
-                  <span class="src-tag ${state.photos[m.id] ? "own" : ""}">${state.photos[m.id] ? t("yourPhotoLabel") : t("aiLabel")}</span>
-                </div>
-                <span class="chev" aria-hidden="true">&#8250;</span>
-              </button>`;
+                  <div class="desc">${esc(tx(it.desc))}</div>
+                </button>
+              </div>`;
             }).join("")}
           </div>`;
 
@@ -1372,11 +1383,7 @@
           <p class="sub" style="margin-bottom:10px">${t("specialEditorFocus")}</p>
           ${evs.length ? evs.map((e, i) => `
           <div class="card" data-ev="${i}" style="margin-bottom:10px">
-            <img src="${esc(eventImg(e))}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
-            <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-bottom:8px">
-              <button class="pbtn" data-ev-cam="${e.id}">${t("takePhoto")}</button>
-              <button class="pbtn" data-ev-gal="${e.id}">${t("fromGallery")}</button>
-            </div>
+            ${staffPhotoBox(eventImg(e), !state.eventPhotos[e.id], "hero", `data-ev-cam="${e.id}"`, `data-ev-gal="${e.id}"`)}
             <label class="fld">${t("fieldTitle")} ENG</label>
             <input type="text" data-f="title-en" value="${esc(e.title.en)}" />
             <label class="fld">${t("fieldTitle")} AFR</label>
@@ -1421,16 +1428,12 @@
             if (!m) return "";
             return `
           <div class="card" style="margin-bottom:10px">
-            <img src="${imgSrc(m)}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:8px" />
+            ${staffPhotoBox(imgSrc(m), !!(m.photoAi && !state.photos[id]), "hero", `data-photo-cam="${id}"`, `data-photo-gal="${id}"`)}
             <label class="fld">${t("pickDish")}</label>
             <select data-deck-pick="${i}">
               ${MENU.map(opt => `<option value="${opt.id}" ${opt.id === id ? "selected" : ""}>${esc(tx(item(opt.id).name))} · ${rand(opt.price)}</option>`).join("")}
             </select>
-            <div class="pbtns" style="flex-direction:row;flex-wrap:wrap;margin-top:10px">
-              <button class="pbtn" data-photo-cam="${id}">${t("takePhoto")}</button>
-              <button class="pbtn" data-photo-gal="${id}">${t("fromGallery")}</button>
-              <button class="pbtn plain" data-deck-del="${i}">${t("removeFromDeck")}</button>
-            </div>
+            <button class="pbtn plain" style="margin-top:10px" data-deck-del="${i}">${t("removeFromDeck")}</button>
           </div>`;
           }).join("")}
           ${deckIds.length < 6 ? `<button class="btn ghost" id="deck-add">${t("addDeckItem")}</button>` : ""}`;
@@ -1760,25 +1763,29 @@
     }
 
     app.querySelectorAll("[data-photo-cam]").forEach(b =>
-      b.addEventListener("click", () => {
+      b.addEventListener("click", e => {
+        e.stopPropagation();
         pendingPhoto = { type: "item", id: b.dataset.photoCam };
         if (camInput) { camInput.value = ""; camInput.click(); }
       })
     );
     app.querySelectorAll("[data-photo-gal]").forEach(b =>
-      b.addEventListener("click", () => {
+      b.addEventListener("click", e => {
+        e.stopPropagation();
         pendingPhoto = { type: "item", id: b.dataset.photoGal };
         if (galInput) { galInput.value = ""; galInput.click(); }
       })
     );
     app.querySelectorAll("[data-ev-cam]").forEach(b =>
-      b.addEventListener("click", () => {
+      b.addEventListener("click", e => {
+        e.stopPropagation();
         pendingPhoto = { type: "event", id: b.dataset.evCam };
         if (camInput) { camInput.value = ""; camInput.click(); }
       })
     );
     app.querySelectorAll("[data-ev-gal]").forEach(b =>
-      b.addEventListener("click", () => {
+      b.addEventListener("click", e => {
+        e.stopPropagation();
         pendingPhoto = { type: "event", id: b.dataset.evGal };
         if (galInput) { galInput.value = ""; galInput.click(); }
       })

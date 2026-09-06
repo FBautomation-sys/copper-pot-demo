@@ -700,8 +700,8 @@ const STRINGS = {
   available: { en: "Available", af: "Beskikbaar" },
   photoManager: { en: "Menu dishes", af: "Spyskaartgeregte" },
   photoManagerNote: {
-    en: "Tap a dish name to open it. Then you can take a photo, pick one from the gallery, and change the name and the description. Save updates the guest menu on this phone.",
-    af: "Tik op 'n geregnaam om dit oop te maak. Dan kan jy 'n foto neem, een uit die gallery kies, en die naam en die beskrywing verander. Stoor dateer die gaste-spyskaart op hierdie foon op."
+    en: "Camera and gallery sit on the photo. Tap the dish name to open it at the size guests see on the menu. AI photos are marked AI photo. A real photo has no label.",
+    af: "Kamera en gallery sit op die foto. Tik op die geregnaam om dit oop te maak op die grootte wat gaste op die spyskaart sien. KI-fotos is gemerk KI-foto. 'n Regte foto het geen etiket nie."
   },
   backToDishes: { en: "Back to dishes", af: "Terug na geregte" },
   fieldName: { en: "Name", af: "Naam" },
